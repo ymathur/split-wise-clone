@@ -110,7 +110,8 @@
                 </cfif>
             </cfloop>
             <cfif abs(splitTotal - amount) gt 0.01>
-                <cfset arrayAppend(formErrors, "Custom split total (#application.currency##numberFormat(splitTotal,'9,999.00')#) must equal expense amount (#application.currency##numberFormat(amount,'9,999.00')#)")>
+                <cfset splitCurSym = application.currencySymbol(grpCFC.getGroup(formData.groupId).currency)>
+                <cfset arrayAppend(formErrors, "Custom split total (#splitCurSym##numberFormat(splitTotal,'9,999.00')#) must equal expense amount (#splitCurSym##numberFormat(amount,'9,999.00')#)")>
             </cfif>
         </cfif>
     </cfif>
@@ -138,6 +139,16 @@
         <cfset groupMembers = grpCFC.getMembers(formData.groupId)>
     </cfif>
 </cfif>
+
+<cfset acctCurrency = {}>
+<cfloop array="#accounts#" index="a"><cfset acctCurrency[a._id] = a.currency></cfloop>
+<cfset groupCurForm = {}>
+<cfloop array="#groups#" index="g"><cfset groupCurForm[g._id] = g.currency></cfloop>
+<cfset initialCurSym = application.currencySymbol(
+    formData.expenseType eq "Group"
+        ? (groupCurForm[formData.groupId] ?: "")
+        : (acctCurrency[formData.accountId] ?: "")
+)>
 
 <cfinclude template="/includes/header.cfm">
 <cfinclude template="/includes/nav.cfm">
@@ -177,10 +188,10 @@
     <div id="personalSection" <cfif formData.expenseType eq "Group">style="display:none"</cfif>>
         <div class="form-group">
             <label class="form-label" for="accountId">Account</label>
-            <select id="accountId" name="accountId" class="form-control">
+            <select id="accountId" name="accountId" class="form-control" onchange="updateAmountCurrency()">
                 <option value="">-- Select Account --</option>
                 <cfloop array="#accounts#" index="a">
-                    <option value="#htmlEditFormat(a._id)#" <cfif formData.accountId eq a._id>selected</cfif>>#htmlEditFormat(a.accountName)#</option>
+                    <option value="#htmlEditFormat(a._id)#" data-currency="#htmlEditFormat(a.currency)#" <cfif formData.accountId eq a._id>selected</cfif>>#htmlEditFormat(a.accountName)#</option>
                 </cfloop>
             </select>
         </div>
@@ -190,10 +201,10 @@
     <div id="groupSection" <cfif formData.expenseType eq "Personal">style="display:none"</cfif>>
         <div class="form-group">
             <label class="form-label" for="groupId">Group</label>
-            <select id="groupId" name="groupId" class="form-control" onchange="loadGroupMembers(this.value)">
+            <select id="groupId" name="groupId" class="form-control" onchange="loadGroupMembers(this.value); updateAmountCurrency();">
                 <option value="">-- Select Group --</option>
                 <cfloop array="#groups#" index="g">
-                    <option value="#htmlEditFormat(g._id)#" <cfif formData.groupId eq g._id>selected</cfif>>#htmlEditFormat(g.groupName)#</option>
+                    <option value="#htmlEditFormat(g._id)#" data-currency="#htmlEditFormat(g.currency)#" <cfif formData.groupId eq g._id>selected</cfif>>#htmlEditFormat(g.groupName)#</option>
                 </cfloop>
             </select>
         </div>
@@ -206,7 +217,7 @@
                    value="#htmlEditFormat(formData.date)#" required>
         </div>
         <div class="form-group">
-            <label class="form-label" for="amount">Amount (#application.currency#) <span class="required">*</span></label>
+            <label class="form-label" for="amount">Amount (<span id="amountCurrencyLabel">#initialCurSym#</span>) <span class="required">*</span></label>
             <input type="number" id="amount" name="amount" class="form-control"
                    value="#htmlEditFormat(formData.amount)#" min="0.01" step="0.01" required
                    oninput="updateEqualShares()">
@@ -334,7 +345,22 @@
 <cfoutput>
 const initialGroupId   = '#jsStringFormat(formData.groupId)#';
 const initialSplitType = '#jsStringFormat(formData.splitType)#';
+const currencySymbols  = #serializeJSON(application.currencySymbols)#;
+const defaultCurrency  = '#jsStringFormat(application.defaultCurrency)#';
 </cfoutput>
+
+function getSelectedCurrencySymbol() {
+    const isGroup = document.querySelector('input[name="expenseType"]:checked')?.value === 'Group';
+    const select  = document.getElementById(isGroup ? 'groupId' : 'accountId');
+    const opt     = select.options[select.selectedIndex];
+    const code    = (opt && opt.dataset.currency) || defaultCurrency;
+    return currencySymbols[code] || currencySymbols[defaultCurrency];
+}
+
+function updateAmountCurrency() {
+    document.getElementById('amountCurrencyLabel').textContent = getSelectedCurrencySymbol();
+    updateEqualShares();
+}
 
 // Show/hide sections based on expense type
 document.querySelectorAll('input[name="expenseType"]').forEach(r => {
@@ -346,6 +372,7 @@ document.querySelectorAll('input[name="expenseType"]').forEach(r => {
         if (!isGroup) {
             document.getElementById('groupId').value = '';
         }
+        updateAmountCurrency();
     });
 });
 
@@ -368,7 +395,8 @@ function updateEqualShares() {
     const checkboxes = document.querySelectorAll('#equalMemberList input[type="checkbox"]:checked');
     const count     = checkboxes.length;
     const share     = count > 0 ? (amount / count).toFixed(2) : '0.00';
-    document.querySelectorAll('.member-share').forEach(el => el.textContent = count > 0 ? '₹' + share : '—');
+    const sym = getSelectedCurrencySymbol();
+    document.querySelectorAll('.member-share').forEach(el => el.textContent = count > 0 ? sym + share : '—');
     const ctEl = document.getElementById('customTarget');
     if (ctEl) ctEl.textContent = amount.toFixed(2);
 }

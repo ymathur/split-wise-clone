@@ -13,10 +13,12 @@
     <cfset settlements = stlCFC.getSettlements(groupFilter, statusFilter)>
     <cfset groups      = grpCFC.getGroups("All")>
 
-    <!--- Build group name lookup --->
+    <!--- Build group name/currency lookups --->
     <cfset groupNames = {}>
+    <cfset groupCurrency = {}>
     <cfloop array="#groups#" index="g">
         <cfset groupNames[g._id] = g.groupName>
+        <cfset groupCurrency[g._id] = g.currency>
     </cfloop>
 
     <!--- Build member name lookups per group --->
@@ -37,6 +39,7 @@
         <cfset settlements = []>
         <cfset groups      = []>
         <cfset groupNames  = {}>
+        <cfset groupCurrency = {}>
         <cfset memberNames = {}>
     </cfcatch>
 </cftry>
@@ -105,7 +108,7 @@
             <td>#htmlEditFormat(memberNames[s.fromMemberId] ?: s.fromMemberId)#</td>
             <td>#htmlEditFormat(memberNames[s.toMemberId]   ?: s.toMemberId)#</td>
             <td>#htmlEditFormat(s.paymentMode)#</td>
-            <td class="text-right">#application.currency##numberFormat(s.amount, "9,999.00")#</td>
+            <td class="text-right">#application.currencySymbol(groupCurrency[s.groupId] ?: "")##numberFormat(s.amount, "9,999.00")#</td>
             <td>
                 <span class="badge badge-<cfif s.status eq 'Paid'>success<cfelse>warning</cfif>">#htmlEditFormat(s.status)#</span>
             </td>

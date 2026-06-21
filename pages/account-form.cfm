@@ -6,7 +6,7 @@
 
 <cfset isEdit     = isDefined("url.id") && len(url.id)>
 <cfset pageTitle  = isEdit ? "Edit Account" : "New Account">
-<cfset formData   = {accountName: "", openingAmount: 0, startDate: dateFormat(now(), "yyyy-mm-dd"), notes: "", status: "Active"}>
+<cfset formData   = {accountName: "", currency: application.defaultCurrency, openingAmount: 0, startDate: dateFormat(now(), "yyyy-mm-dd"), notes: "", status: "Active"}>
 <cfset formErrors = []>
 
 <cfif isEdit>
@@ -14,6 +14,7 @@
         <cfset existing = accCFC.getAccount(url.id)>
         <cfset formData = {
             accountName   : existing.accountName,
+            currency      : len(existing.currency ?: "") ? existing.currency : application.defaultCurrency,
             openingAmount : existing.openingAmount,
             startDate     : existing.startDate,
             notes         : existing.notes,
@@ -27,6 +28,7 @@
 
 <cfif cgi.request_method eq "POST">
     <cfset formData.accountName   = trim(form.accountName   ?: "")>
+    <cfset formData.currency      = trim(form.currency      ?: application.defaultCurrency)>
     <cfset formData.openingAmount = trim(form.openingAmount ?: 0)>
     <cfset formData.startDate     = trim(form.startDate     ?: "")>
     <cfset formData.notes         = trim(form.notes         ?: "")>
@@ -82,10 +84,21 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label class="form-label" for="openingAmount">Opening Amount (#application.currency#)</label>
+            <label class="form-label" for="currency">Currency</label>
+            <select id="currency" name="currency" class="form-control">
+                <cfloop array="#application.currencies#" index="c">
+                    <option value="#c.code#" <cfif formData.currency eq c.code>selected</cfif>>#c.symbol# &mdash; #c.name#</option>
+                </cfloop>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="openingAmount">Opening Amount</label>
             <input type="number" id="openingAmount" name="openingAmount" class="form-control"
                    value="#val(formData.openingAmount)#" min="0" step="0.01">
         </div>
+    </div>
+
+    <div class="form-row">
         <div class="form-group">
             <label class="form-label" for="startDate">Start Date <span class="required">*</span></label>
             <input type="date" id="startDate" name="startDate" class="form-control"

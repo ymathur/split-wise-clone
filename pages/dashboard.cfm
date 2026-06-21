@@ -10,37 +10,48 @@
 <cftry>
     <cfset accounts      = accCFC.getAccounts()>
     <cfset groups        = grpCFC.getGroups()>
+    <cfset allAccounts   = accCFC.getAccounts("All")>
+    <cfset allGroups     = grpCFC.getGroups("All")>
     <cfset recentExp     = expCFC.getExpenses({})>
     <cfset pendingStls   = stlCFC.getSettlements("", "Pending")>
 
-    <!--- Summary numbers --->
-    <cfset totalPersonal = 0>
-    <cfset totalGroup    = 0>
-    <cfset totalBalance  = 0>
-    <cfset amtPayable    = 0>
-    <cfset amtReceivable = 0>
+    <cfset acctCurrency = {}>
+    <cfloop array="#allAccounts#" index="a"><cfset acctCurrency[a._id] = a.currency></cfloop>
+    <cfset groupCurrency = {}>
+    <cfloop array="#allGroups#" index="g"><cfset groupCurrency[g._id] = g.currency></cfloop>
+
+    <!--- Summary numbers, split per currency since accounts/groups can each use a different one --->
+    <cfset totalPersonalByCur  = {}>
+    <cfset totalGroupByCur     = {}>
+    <cfset totalBalanceByCur   = {}>
+    <cfset amtPayableByCur     = {}>
+    <cfset amtReceivableByCur  = {}>
 
     <cfloop array="#recentExp#" index="e">
         <cfif e.expenseType eq "Personal">
-            <cfset totalPersonal += val(e.amount)>
+            <cfset cur = acctCurrency[e.accountId] ?: application.defaultCurrency>
+            <cfset totalPersonalByCur[cur] = (totalPersonalByCur[cur] ?: 0) + val(e.amount)>
         <cfelse>
-            <cfset totalGroup += val(e.amount)>
+            <cfset cur = groupCurrency[e.groupId] ?: application.defaultCurrency>
+            <cfset totalGroupByCur[cur] = (totalGroupByCur[cur] ?: 0) + val(e.amount)>
         </cfif>
     </cfloop>
 
     <cfloop array="#accounts#" index="acc">
         <cftry>
             <cfset bal = accCFC.getAccountBalance(acc._id)>
-            <cfset totalBalance += bal.balance>
+            <cfset cur = acc.currency ?: application.defaultCurrency>
+            <cfset totalBalanceByCur[cur] = (totalBalanceByCur[cur] ?: 0) + bal.balance>
             <cfcatch type="any"></cfcatch>
         </cftry>
     </cfloop>
 
     <cfloop array="#pendingStls#" index="s">
+        <cfset cur = groupCurrency[s.groupId] ?: application.defaultCurrency>
         <cfif s.fromMemberId eq session.userId>
-            <cfset amtPayable += val(s.amount)>
+            <cfset amtPayableByCur[cur] = (amtPayableByCur[cur] ?: 0) + val(s.amount)>
         <cfelse>
-            <cfset amtReceivable += val(s.amount)>
+            <cfset amtReceivableByCur[cur] = (amtReceivableByCur[cur] ?: 0) + val(s.amount)>
         </cfif>
     </cfloop>
 
@@ -73,22 +84,46 @@
 <div class="stats-grid">
     <div class="stat-card stat-blue">
         <div class="stat-icon">&##128179;</div>
-        <div class="stat-value">#application.currency##numberFormat(totalBalance, "9,999.00")#</div>
+        <div class="stat-value">
+            <cfif !structCount(totalBalanceByCur)>#application.currencySymbol("")#0.00<cfelse>
+                <cfloop collection="#totalBalanceByCur#" item="cur">
+                    <div>#application.currencySymbol(cur)##numberFormat(totalBalanceByCur[cur], "9,999.00")#</div>
+                </cfloop>
+            </cfif>
+        </div>
         <div class="stat-label">Total Balance</div>
     </div>
     <div class="stat-card stat-red">
         <div class="stat-icon">&##128176;</div>
-        <div class="stat-value">#application.currency##numberFormat(totalPersonal, "9,999.00")#</div>
+        <div class="stat-value">
+            <cfif !structCount(totalPersonalByCur)>#application.currencySymbol("")#0.00<cfelse>
+                <cfloop collection="#totalPersonalByCur#" item="cur">
+                    <div>#application.currencySymbol(cur)##numberFormat(totalPersonalByCur[cur], "9,999.00")#</div>
+                </cfloop>
+            </cfif>
+        </div>
         <div class="stat-label">Personal Expenses</div>
     </div>
     <div class="stat-card stat-orange">
         <div class="stat-icon">&##128101;</div>
-        <div class="stat-value">#application.currency##numberFormat(totalGroup, "9,999.00")#</div>
+        <div class="stat-value">
+            <cfif !structCount(totalGroupByCur)>#application.currencySymbol("")#0.00<cfelse>
+                <cfloop collection="#totalGroupByCur#" item="cur">
+                    <div>#application.currencySymbol(cur)##numberFormat(totalGroupByCur[cur], "9,999.00")#</div>
+                </cfloop>
+            </cfif>
+        </div>
         <div class="stat-label">Group Expenses</div>
     </div>
     <div class="stat-card stat-green">
         <div class="stat-icon">&##129534;</div>
-        <div class="stat-value">#application.currency##numberFormat(amtReceivable, "9,999.00")#</div>
+        <div class="stat-value">
+            <cfif !structCount(amtReceivableByCur)>#application.currencySymbol("")#0.00<cfelse>
+                <cfloop collection="#amtReceivableByCur#" item="cur">
+                    <div>#application.currencySymbol(cur)##numberFormat(amtReceivableByCur[cur], "9,999.00")#</div>
+                </cfloop>
+            </cfif>
+        </div>
         <div class="stat-label">To Receive</div>
     </div>
     <div class="stat-card stat-purple">
@@ -124,11 +159,12 @@
             </thead>
             <tbody>
             <cfloop array="#recentExp5#" index="e">
+                <cfset eCur = e.expenseType eq "Personal" ? (acctCurrency[e.accountId] ?: application.defaultCurrency) : (groupCurrency[e.groupId] ?: application.defaultCurrency)>
                 <tr>
                     <td>#dateFormat(e.date, "dd/mm")#</td>
                     <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
                     <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
-                    <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
+                    <td class="text-right">#application.currencySymbol(eCur)##numberFormat(e.amount, "9,999.00")#</td>
                 </tr>
             </cfloop>
             </tbody>
@@ -155,7 +191,7 @@
                 <tr>
                     <td><a href="/pages/expenses.cfm?accountId=#urlEncodedFormat(acc._id)#">#htmlEditFormat(acc.accountName)#</a></td>
                     <td class="text-right <cfif bal.balance lt 0>text-danger<cfelse>text-success</cfif>">
-                        #application.currency##numberFormat(bal.balance, "9,999.00")#
+                        #application.currencySymbol(acc.currency)##numberFormat(bal.balance, "9,999.00")#
                     </td>
                 </tr>
                 <cfcatch type="any"><cfcontinue></cfcatch>

@@ -62,6 +62,10 @@
 
 <cfset expCFC = new components.expense(fb, session.userId, session.idToken)>
 
+<cfset groupCurForm = {}>
+<cfloop array="#groups#" index="g"><cfset groupCurForm[g._id] = g.currency></cfloop>
+<cfset initialCurSym = application.currencySymbol(groupCurForm[formData.groupId] ?: "")>
+
 <cfinclude template="/includes/header.cfm">
 <cfinclude template="/includes/nav.cfm">
 
@@ -83,10 +87,10 @@
     <div class="form-group">
         <label class="form-label" for="groupId">Group <span class="required">*</span></label>
         <select id="groupId" name="groupId" class="form-control" required
-                onchange="loadSettlementMembers(this.value)">
+                onchange="loadSettlementMembers(this.value); updateAmountCurrency();">
             <option value="">-- Select Group --</option>
             <cfloop array="#groups#" index="g">
-                <option value="#htmlEditFormat(g._id)#" <cfif formData.groupId eq g._id>selected</cfif>>#htmlEditFormat(g.groupName)#</option>
+                <option value="#htmlEditFormat(g._id)#" data-currency="#htmlEditFormat(g.currency)#" <cfif formData.groupId eq g._id>selected</cfif>>#htmlEditFormat(g.groupName)#</option>
             </cfloop>
         </select>
     </div>
@@ -116,7 +120,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label class="form-label" for="amount">Amount (#application.currency#) <span class="required">*</span></label>
+            <label class="form-label" for="amount">Amount (<span id="amountCurrencyLabel">#initialCurSym#</span>) <span class="required">*</span></label>
             <input type="number" id="amount" name="amount" class="form-control"
                    value="#htmlEditFormat(formData.amount)#" min="0.01" step="0.01" required>
         </div>
@@ -150,6 +154,18 @@
 </div>
 
 <script>
+<cfoutput>
+const currencySymbols = #serializeJSON(application.currencySymbols)#;
+const defaultCurrency = '#jsStringFormat(application.defaultCurrency)#';
+</cfoutput>
+
+function updateAmountCurrency() {
+    const select = document.getElementById('groupId');
+    const opt    = select.options[select.selectedIndex];
+    const code   = (opt && opt.dataset.currency) || defaultCurrency;
+    document.getElementById('amountCurrencyLabel').textContent = currencySymbols[code] || currencySymbols[defaultCurrency];
+}
+
 async function loadSettlementMembers(groupId) {
     if (!groupId) return;
     try {

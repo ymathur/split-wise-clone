@@ -6,7 +6,7 @@
 
 <cfset isEdit     = isDefined("url.id") && len(url.id)>
 <cfset pageTitle  = isEdit ? "Edit Group" : "New Group">
-<cfset formData   = {groupName: "", description: "", startDate: dateFormat(now(), "yyyy-mm-dd"), endDate: "", openingAmount: 0, status: "Active"}>
+<cfset formData   = {groupName: "", currency: application.defaultCurrency, description: "", startDate: dateFormat(now(), "yyyy-mm-dd"), endDate: "", openingAmount: 0, status: "Active"}>
 <cfset formErrors = []>
 
 <cfif isEdit>
@@ -14,6 +14,7 @@
         <cfset existing = grpCFC.getGroup(url.id)>
         <cfset formData = {
             groupName     : existing.groupName,
+            currency      : len(existing.currency ?: "") ? existing.currency : application.defaultCurrency,
             description   : existing.description,
             startDate     : existing.startDate,
             endDate       : existing.endDate,
@@ -28,6 +29,7 @@
 
 <cfif cgi.request_method eq "POST">
     <cfset formData.groupName     = trim(form.groupName     ?: "")>
+    <cfset formData.currency      = trim(form.currency      ?: application.defaultCurrency)>
     <cfset formData.description   = trim(form.description   ?: "")>
     <cfset formData.startDate     = trim(form.startDate     ?: "")>
     <cfset formData.endDate       = trim(form.endDate       ?: "")>
@@ -98,11 +100,22 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label class="form-label" for="openingAmount">Opening Pool Amount (#application.currency#)</label>
+            <label class="form-label" for="currency">Currency</label>
+            <select id="currency" name="currency" class="form-control">
+                <cfloop array="#application.currencies#" index="c">
+                    <option value="#c.code#" <cfif formData.currency eq c.code>selected</cfif>>#c.symbol# &mdash; #c.name#</option>
+                </cfloop>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="openingAmount">Opening Pool Amount</label>
             <input type="number" id="openingAmount" name="openingAmount" class="form-control"
                    value="#val(formData.openingAmount)#" min="0" step="0.01">
         </div>
-        <cfif isEdit>
+    </div>
+
+    <cfif isEdit>
+    <div class="form-row">
         <div class="form-group">
             <label class="form-label" for="status">Status</label>
             <select id="status" name="status" class="form-control">
@@ -110,8 +123,8 @@
                 <option value="Closed" <cfif formData.status eq "Closed">selected</cfif>>Closed</option>
             </select>
         </div>
-        </cfif>
     </div>
+    </cfif>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">#isEdit ? "Update Group" : "Create Group"#</button>

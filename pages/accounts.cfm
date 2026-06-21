@@ -45,6 +45,7 @@
 <cfloop array="#accounts#" index="acc">
     <cftry>
     <cfset bal = accCFC.getAccountBalance(acc._id)>
+    <cfset curSym = application.currencySymbol(acc.currency ?: "")>
     <div class="list-card">
         <div class="list-card-main">
             <div class="list-card-title">
@@ -56,9 +57,9 @@
                 <cfif len(acc.notes)> &bull; #htmlEditFormat(acc.notes)#</cfif>
             </div>
             <div class="balance-row">
-                <span>Opening: <strong>#application.currency##numberFormat(bal.openingAmount, "9,999.00")#</strong></span>
-                <span>Spent: <strong class="text-danger">#application.currency##numberFormat(bal.totalExpenses, "9,999.00")#</strong></span>
-                <span>Balance: <strong class="<cfif bal.balance lt 0>text-danger<cfelse>text-success</cfif>">#application.currency##numberFormat(bal.balance, "9,999.00")#</strong></span>
+                <span>Opening: <strong>#curSym##numberFormat(bal.openingAmount, "9,999.00")#</strong></span>
+                <span>Spent: <strong class="text-danger">#curSym##numberFormat(bal.totalExpenses, "9,999.00")#</strong></span>
+                <span>Balance: <strong class="<cfif bal.balance lt 0>text-danger<cfelse>text-success</cfif>">#curSym##numberFormat(bal.balance, "9,999.00")#</strong></span>
             </div>
         </div>
         <div class="list-card-actions">

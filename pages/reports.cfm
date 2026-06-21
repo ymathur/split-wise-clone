@@ -119,19 +119,26 @@
 
 <!--- Report Output --->
 <cfif reportGenerated>
+    <cfset reportCurSym = len(reportData.currency ?: "") ? application.currencySymbol(reportData.currency) : application.currencySymbol("")>
     <cfif reportType eq "personal">
         <!--- Personal Report --->
         <div class="stats-grid stats-grid-3">
             <div class="stat-card stat-blue">
-                <div class="stat-value">#application.currency##numberFormat(reportData.openingAmount, "9,999.00")#</div>
+                <div class="stat-value">#reportCurSym##numberFormat(reportData.openingAmount, "9,999.00")#</div>
                 <div class="stat-label">Opening Amount</div>
             </div>
             <div class="stat-card stat-red">
-                <div class="stat-value">#application.currency##numberFormat(reportData.totalExpenses, "9,999.00")#</div>
+                <div class="stat-value">
+                    <cfif !structCount(reportData.totalByCur)>#reportCurSym#0.00<cfelse>
+                        <cfloop collection="#reportData.totalByCur#" item="cur">
+                            <div>#application.currencySymbol(cur)##numberFormat(reportData.totalByCur[cur], "9,999.00")#</div>
+                        </cfloop>
+                    </cfif>
+                </div>
                 <div class="stat-label">Total Spent</div>
             </div>
             <div class="stat-card stat-<cfif reportData.balance lt 0>red<cfelse>green</cfif>">
-                <div class="stat-value">#application.currency##numberFormat(reportData.balance, "9,999.00")#</div>
+                <div class="stat-value">#reportCurSym##numberFormat(reportData.balance, "9,999.00")#</div>
                 <div class="stat-label">Balance</div>
             </div>
         </div>
@@ -148,7 +155,7 @@
                     <cfset pct = reportData.totalExpenses gt 0 ? (reportData.categoryTotals[cat] / reportData.totalExpenses * 100) : 0>
                     <tr>
                         <td>#cat#</td>
-                        <td class="text-right">#application.currency##numberFormat(reportData.categoryTotals[cat], "9,999.00")#</td>
+                        <td class="text-right">#reportCurSym##numberFormat(reportData.categoryTotals[cat], "9,999.00")#</td>
                         <td class="text-right">#numberFormat(pct, "9.0")#%</td>
                     </tr>
                 </cfloop>
@@ -169,7 +176,7 @@
                         <td>#htmlEditFormat(e.description)#</td>
                         <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                         <td>#htmlEditFormat(e.paymentMode)#</td>
-                        <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
+                        <td class="text-right">#application.currencySymbol(reportData.acctCurrency[e.accountId] ?: "")##numberFormat(e.amount, "9,999.00")#</td>
                     </tr>
                 </cfloop>
                 </tbody>
@@ -181,14 +188,15 @@
 
     <cfelseif reportType eq "group">
         <!--- Group Report --->
+        <cfset groupCurSym = application.currencySymbol(reportData.group.currency)>
         <div class="card">
             <div class="card-header">
                 <h2>#htmlEditFormat(reportData.group.groupName)#</h2>
-                <span class="badge badge-#lCase(reportData.group.status)#">#reportData.group.status#</span>
+                <span class="badge badge-#htmlEditFormat(lCase(reportData.group.status))#">#htmlEditFormat(reportData.group.status)#</span>
             </div>
             <div class="stats-grid stats-grid-3">
                 <div class="stat-card stat-blue">
-                    <div class="stat-value">#application.currency##numberFormat(reportData.totalSpend, "9,999.00")#</div>
+                    <div class="stat-value">#groupCurSym##numberFormat(reportData.totalSpend, "9,999.00")#</div>
                     <div class="stat-label">Total Spent</div>
                 </div>
                 <div class="stat-card stat-teal">
@@ -212,10 +220,10 @@
                 <cfloop array="#reportData.balances#" index="b">
                     <tr>
                         <td><strong>#htmlEditFormat(b.name)#</strong></td>
-                        <td class="text-right">#application.currency##numberFormat(b.totalPaid, "9,999.00")#</td>
-                        <td class="text-right">#application.currency##numberFormat(b.totalShare, "9,999.00")#</td>
+                        <td class="text-right">#groupCurSym##numberFormat(b.totalPaid, "9,999.00")#</td>
+                        <td class="text-right">#groupCurSym##numberFormat(b.totalShare, "9,999.00")#</td>
                         <td class="text-right <cfif b.netBalance gt 0>text-success<cfelseif b.netBalance lt 0>text-danger<cfelse>text-muted</cfif>">
-                            <cfif b.netBalance gt 0>+</cfif>#application.currency##numberFormat(b.netBalance, "9,999.00")#
+                            <cfif b.netBalance gt 0>+</cfif>#groupCurSym##numberFormat(b.netBalance, "9,999.00")#
                         </td>
                     </tr>
                 </cfloop>
@@ -235,7 +243,7 @@
                         <td>#htmlEditFormat(e.description)#</td>
                         <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                         <td>#htmlEditFormat(reportData.memberMap[e.paidByMemberId] ?: "—")#</td>
-                        <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
+                        <td class="text-right">#groupCurSym##numberFormat(e.amount, "9,999.00")#</td>
                     </tr>
                 </cfloop>
                 </tbody>

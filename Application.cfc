@@ -19,7 +19,7 @@ component {
     }
 
     function onRequestStart(targetPage) {
-        if (!application.keyExists("firebase")) {
+        if (!application.keyExists("firebase") || !application.keyExists("currencies")) {
             loadConfig();
         }
     }
@@ -40,7 +40,31 @@ component {
         };
         application.appName    = "Split Expense App";
         application.appVersion = "1.0";
-        application.currency   = "₹";
+
+        application.currencies = [
+            {"code": "INR", "symbol": "₹",   "name": "Indian Rupee"},
+            {"code": "USD", "symbol": "$",   "name": "US Dollar"},
+            {"code": "EUR", "symbol": "€",   "name": "Euro"},
+            {"code": "GBP", "symbol": "£",   "name": "British Pound"},
+            {"code": "JPY", "symbol": "¥",   "name": "Japanese Yen"},
+            {"code": "AUD", "symbol": "A$",  "name": "Australian Dollar"},
+            {"code": "CAD", "symbol": "C$",  "name": "Canadian Dollar"},
+            {"code": "SGD", "symbol": "S$",  "name": "Singapore Dollar"},
+            {"code": "AED", "symbol": "AED", "name": "UAE Dirham"},
+            {"code": "CHF", "symbol": "CHF", "name": "Swiss Franc"}
+        ];
+        application.defaultCurrency = "INR";
+        application.currencySymbols = {};
+        for (var c in application.currencies) {
+            application.currencySymbols[c.code] = c.symbol;
+        }
+
+        application.currencySymbol = function(code) {
+            var key = len(arguments.code ?: "") ? arguments.code : application.defaultCurrency;
+            return structKeyExists(application.currencySymbols, key)
+                ? application.currencySymbols[key]
+                : application.currencySymbols[application.defaultCurrency];
+        };
     }
 
 }

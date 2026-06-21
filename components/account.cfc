@@ -18,6 +18,7 @@ component {
             "accountId"     : id,
             "userId"        : variables.userId,
             "accountName"   : arguments.data.accountName,
+            "currency"      : len(arguments.data.currency ?: "") ? arguments.data.currency : application.defaultCurrency,
             "openingAmount" : val(arguments.data.openingAmount ?: 0),
             "startDate"     : arguments.data.startDate ?: dateFormat(now(), "yyyy-mm-dd"),
             "notes"         : arguments.data.notes ?: "",
@@ -45,19 +46,32 @@ component {
         if (!result.success) return [];
         var list = arrayFilter(result.data, function(a) { return a.status != "Deleted"; });
         arraySort(list, function(a, b) { return compare(b.createdAt, a.createdAt); });
+        for (var a in list) _ensureCurrency(a);
         return list;
     }
 
     function getAccount(required string accountId) {
         var result = variables.fb.getDocument("accounts", arguments.accountId, variables.idToken);
-        if (result.success && result.data.userId == variables.userId) return result.data;
+        if (result.success && result.data.userId == variables.userId) {
+            _ensureCurrency(result.data);
+            return result.data;
+        }
         throw(type="NotFoundError", message="Account not found");
+    }
+
+    // Backfills currency on accounts created before this field existed, so
+    // every caller can safely read acc.currency without a missing-key error.
+    private function _ensureCurrency(required struct acc) {
+        if (!len(arguments.acc.currency ?: "")) {
+            arguments.acc.currency = application.defaultCurrency;
+        }
     }
 
     function updateAccount(required string accountId, required struct data) {
         var existing = getAccount(arguments.accountId);
         var updates = {
             "accountName"   : arguments.data.accountName   ?: existing.accountName,
+            "currency"      : len(arguments.data.currency ?: "") ? arguments.data.currency : (existing.currency ?: application.defaultCurrency),
             "openingAmount" : val(arguments.data.openingAmount ?: existing.openingAmount),
             "startDate"     : arguments.data.startDate     ?: existing.startDate,
             "notes"         : arguments.data.notes         ?: existing.notes,

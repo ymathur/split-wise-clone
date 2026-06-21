@@ -20,6 +20,7 @@ component {
             "groupId"       : id,
             "ownerUserId"   : variables.userId,
             "groupName"     : arguments.data.groupName,
+            "currency"      : len(arguments.data.currency ?: "") ? arguments.data.currency : application.defaultCurrency,
             "description"   : arguments.data.description   ?: "",
             "startDate"     : arguments.data.startDate     ?: dateFormat(now(), "yyyy-mm-dd"),
             "endDate"       : arguments.data.endDate       ?: "",
@@ -48,19 +49,32 @@ component {
         if (!result.success) return [];
         var list = arrayFilter(result.data, function(g) { return g.status != "Deleted"; });
         arraySort(list, function(a, b) { return compare(b.createdAt, a.createdAt); });
+        for (var g in list) _ensureCurrency(g);
         return list;
     }
 
     function getGroup(required string groupId) {
         var result = variables.fb.getDocument("groups", arguments.groupId, variables.idToken);
-        if (result.success && result.data.ownerUserId == variables.userId) return result.data;
+        if (result.success && result.data.ownerUserId == variables.userId) {
+            _ensureCurrency(result.data);
+            return result.data;
+        }
         throw(type="NotFoundError", message="Group not found");
+    }
+
+    // Backfills currency on groups created before this field existed, so
+    // every caller can safely read grp.currency without a missing-key error.
+    private function _ensureCurrency(required struct grp) {
+        if (!len(arguments.grp.currency ?: "")) {
+            arguments.grp.currency = application.defaultCurrency;
+        }
     }
 
     function updateGroup(required string groupId, required struct data) {
         var existing = getGroup(arguments.groupId);
         var updates = {
             "groupName"     : arguments.data.groupName     ?: existing.groupName,
+            "currency"      : len(arguments.data.currency ?: "") ? arguments.data.currency : existing.currency,
             "description"   : arguments.data.description   ?: existing.description,
             "startDate"     : arguments.data.startDate     ?: existing.startDate,
             "endDate"       : arguments.data.endDate       ?: existing.endDate,

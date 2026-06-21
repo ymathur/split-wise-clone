@@ -21,14 +21,26 @@
     <cfset expenses  = expCFC.getExpenses(f)>
     <cfset accounts  = accCFC.getAccounts("All")>
     <cfset groups    = grpCFC.getGroups("All")>
-    <cfset totalAmt  = 0>
-    <cfloop array="#expenses#" index="e"><cfset totalAmt += val(e.amount)></cfloop>
+
+    <cfset acctCurrency = {}>
+    <cfloop array="#accounts#" index="a"><cfset acctCurrency[a._id] = a.currency></cfloop>
+    <cfset groupCurrency = {}>
+    <cfloop array="#groups#" index="g"><cfset groupCurrency[g._id] = g.currency></cfloop>
+
+    <cfset totalByCur = {}>
+    <cfloop array="#expenses#" index="e">
+        <cfset eCur = e.expenseType eq "Personal" ? (acctCurrency[e.accountId] ?: application.defaultCurrency) : (groupCurrency[e.groupId] ?: application.defaultCurrency)>
+        <cfset totalByCur[eCur] = (totalByCur[eCur] ?: 0) + val(e.amount)>
+    </cfloop>
+
     <cfcatch type="any">
         <cfset loadError = cfcatch.message>
         <cfset expenses = []>
         <cfset accounts = []>
         <cfset groups   = []>
-        <cfset totalAmt = 0>
+        <cfset acctCurrency = {}>
+        <cfset groupCurrency = {}>
+        <cfset totalByCur = {}>
     </cfcatch>
 </cftry>
 
@@ -112,7 +124,14 @@
 </div>
 
 <div class="summary-bar">
-    <strong>#arrayLen(expenses)# expense(s)</strong> &bull; Total: <strong>#application.currency##numberFormat(totalAmt, "9,999.00")#</strong>
+    <strong>#arrayLen(expenses)# expense(s)</strong> &bull; Total:
+    <cfif !structCount(totalByCur)>
+        <strong>#application.currencySymbol("")#0.00</strong>
+    <cfelse>
+        <cfloop collection="#totalByCur#" item="cur">
+            <strong>#application.currencySymbol(cur)##numberFormat(totalByCur[cur], "9,999.00")#</strong>
+        </cfloop>
+    </cfif>
 </div>
 
 <cfif arrayLen(expenses)>
@@ -131,13 +150,14 @@
     </thead>
     <tbody>
     <cfloop array="#expenses#" index="e">
+        <cfset eCur = e.expenseType eq "Personal" ? (acctCurrency[e.accountId] ?: application.defaultCurrency) : (groupCurrency[e.groupId] ?: application.defaultCurrency)>
         <tr>
             <td>#dateFormat(e.date, "dd/mm/yy")#</td>
             <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
             <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
             <td><span class="badge badge-<cfif e.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#htmlEditFormat(e.expenseType)#</span></td>
             <td>#htmlEditFormat(e.paymentMode)#</td>
-            <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
+            <td class="text-right">#application.currencySymbol(eCur)##numberFormat(e.amount, "9,999.00")#</td>
             <td class="actions">
                 <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(e._id)#"   class="btn btn-xs btn-outline">Edit</a>
                 <form method="post" class="inline-form" onsubmit="return confirm('Delete this expense?')">

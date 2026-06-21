@@ -6,6 +6,7 @@
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
 <cfset expCFC = new components.expense(fb, session.userId, session.idToken)>
 <cfset grpCFC = new components.group(fb, session.userId, session.idToken)>
+<cfset accCFC = new components.account(fb, session.userId, session.idToken)>
 
 <cftry>
     <cfset expense = expCFC.getExpense(expId)>
@@ -16,7 +17,11 @@
         <cfloop array="#members#" index="m">
             <cfset memberNames[m.memberId] = m.name>
         </cfloop>
+        <cfset eCur = grpCFC.getGroup(expense.groupId).currency>
+    <cfelse>
+        <cfset eCur = accCFC.getAccount(expense.accountId).currency>
     </cfif>
+    <cfset curSym = application.currencySymbol(eCur)>
     <cfset pageTitle = expense.description>
     <cfcatch type="any">
         <cflocation url="/pages/expenses.cfm" addtoken="false">
@@ -42,7 +47,7 @@
 <div class="card">
     <table class="detail-table">
         <tr><th>Date</th>         <td>#dateFormat(expense.date, "dd mmm yyyy")#</td></tr>
-        <tr><th>Amount</th>       <td><strong>#application.currency##numberFormat(expense.amount, "9,999.00")#</strong></td></tr>
+        <tr><th>Amount</th>       <td><strong>#curSym##numberFormat(expense.amount, "9,999.00")#</strong></td></tr>
         <tr><th>Category</th>     <td>#htmlEditFormat(expense.category)#</td></tr>
         <tr><th>Payment Mode</th> <td>#htmlEditFormat(expense.paymentMode)#</td></tr>
         <tr><th>Type</th>         <td>#htmlEditFormat(expense.expenseType)#</td></tr>
@@ -68,12 +73,12 @@
         <cfloop array="#splits#" index="s">
             <tr>
                 <td>#htmlEditFormat(memberNames[s.memberId] ?: s.memberId)#</td>
-                <td class="text-right">#application.currency##numberFormat(s.shareAmount, "9,999.00")#</td>
+                <td class="text-right">#curSym##numberFormat(s.shareAmount, "9,999.00")#</td>
             </tr>
         </cfloop>
         <tr class="total-row">
             <td><strong>Total</strong></td>
-            <td class="text-right"><strong>#application.currency##numberFormat(expense.amount, "9,999.00")#</strong></td>
+            <td class="text-right"><strong>#curSym##numberFormat(expense.amount, "9,999.00")#</strong></td>
         </tr>
         </tbody>
     </table>

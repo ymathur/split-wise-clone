@@ -34,6 +34,7 @@
     <cfloop array="#expenses#" index="e"><cfset totalSpend += val(e.amount)></cfloop>
 
     <cfset pageTitle = grp.groupName>
+    <cfset curSym = application.currencySymbol(grp.currency)>
 
     <cfcatch type="any">
         <cflocation url="/pages/groups.cfm?error=1" addtoken="false">
@@ -60,7 +61,7 @@
 
 <div class="stats-grid stats-grid-3">
     <div class="stat-card stat-blue">
-        <div class="stat-value">#application.currency##numberFormat(totalSpend, "9,999.00")#</div>
+        <div class="stat-value">#curSym##numberFormat(totalSpend, "9,999.00")#</div>
         <div class="stat-label">Total Spent</div>
     </div>
     <div class="stat-card stat-teal">
@@ -94,10 +95,10 @@
         <cfloop array="#balances#" index="b">
             <tr>
                 <td><strong>#htmlEditFormat(b.name)#</strong></td>
-                <td class="text-right">#application.currency##numberFormat(b.totalPaid, "9,999.00")#</td>
-                <td class="text-right">#application.currency##numberFormat(b.totalShare, "9,999.00")#</td>
+                <td class="text-right">#curSym##numberFormat(b.totalPaid, "9,999.00")#</td>
+                <td class="text-right">#curSym##numberFormat(b.totalShare, "9,999.00")#</td>
                 <td class="text-right <cfif b.netBalance gt 0>text-success<cfelseif b.netBalance lt 0>text-danger<cfelse>text-muted</cfif>">
-                    <cfif b.netBalance gt 0>+</cfif>#application.currency##numberFormat(abs(b.netBalance), "9,999.00")#
+                    <cfif b.netBalance gt 0>+</cfif>#curSym##numberFormat(abs(b.netBalance), "9,999.00")#
                 </td>
                 <td>
                     <cfif b.netBalance gt 0.01>
@@ -132,7 +133,7 @@
             <tr>
                 <td>#htmlEditFormat(sug.fromName)#</td>
                 <td>#htmlEditFormat(sug.toName)#</td>
-                <td class="text-right">#application.currency##numberFormat(sug.amount, "9,999.00")#</td>
+                <td class="text-right">#curSym##numberFormat(sug.amount, "9,999.00")#</td>
                 <td>
                     <a href="/pages/settlement-form.cfm?groupId=#urlEncodedFormat(groupId)#&fromId=#urlEncodedFormat(sug.fromMemberId)#&toId=#urlEncodedFormat(sug.toMemberId)#&amount=#urlEncodedFormat(sug.amount)#"
                        class="btn btn-sm btn-primary">Record</a>
@@ -162,7 +163,7 @@
                 <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
                 <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                 <td>#len(e.paidByMemberId) && structKeyExists(memberNames, e.paidByMemberId) ? htmlEditFormat(memberNames[e.paidByMemberId]) : "—"#</td>
-                <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
+                <td class="text-right">#curSym##numberFormat(e.amount, "9,999.00")#</td>
                 <td>
                     <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(e._id)#" class="btn btn-xs btn-outline">Edit</a>
                 </td>

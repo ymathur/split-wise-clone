@@ -17,6 +17,7 @@
 <cfset expenseType  = isDefined("form.expenseType") ? form.expenseType : "Personal">
 <cfset targetId     = isDefined("form.targetId") ? form.targetId : "">
 <cfset targetName   = "">
+<cfset targetCurSym = application.currencySymbol("")>
 <cfset importedCount = 0>
 <cfset failedCount   = 0>
 <cfset failMessages  = []>
@@ -55,6 +56,7 @@
                     <cfif expenseType eq "Group">
                         <cfset targetGroup  = grpCFC.getGroup(targetId)>
                         <cfset targetName   = targetGroup.groupName>
+                        <cfset targetCurSym = application.currencySymbol(targetGroup.currency)>
                         <cfset members      = grpCFC.getMembers(targetId)>
                         <cfif !arrayLen(members)>
                             <cfset arrayAppend(pageErrors, "This group has no members yet. Add members before importing.")>
@@ -85,6 +87,7 @@
                     <cfelse>
                         <cfset targetAccount = accCFC.getAccount(targetId)>
                         <cfset targetName    = targetAccount.accountName>
+                        <cfset targetCurSym  = application.currencySymbol(targetAccount.currency)>
                         <cfset existingExp   = expCFC.getExpenses({accountId: targetId, expenseType: "Personal"})>
                         <cfset existingSigs  = importCFC.buildExistingSignatures(existingExp)>
 
@@ -282,7 +285,7 @@ function togglePersonalGroup(type) {
                     </td>
                     <td>#htmlEditFormat(item.data.date)#</td>
                     <td>#htmlEditFormat(item.data.description)#</td>
-                    <td class="text-right">#application.currency##numberFormat(val(item.data.amount), "9,999.00")#</td>
+                    <td class="text-right">#targetCurSym##numberFormat(val(item.data.amount), "9,999.00")#</td>
                     <td>#htmlEditFormat(item.data.category)#</td>
                     <cfif expenseType eq "Group">
                         <td>#htmlEditFormat(memberNameById[item.data.paidByMemberId] ?: "")#</td>
