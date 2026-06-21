@@ -32,11 +32,19 @@ component {
     }
 
     private function loadConfig() {
+        var env = loadEnv(expandPath("/.env"));
+        var required = ["FIREBASE_PROJECT_ID", "FIREBASE_API_KEY", "FIREBASE_AUTH_DOMAIN"];
+        for (var key in required) {
+            if (!len(env[key] ?: "")) {
+                throw(type="ConfigError", message="Missing #key# in .env - copy .env.example to .env and fill in your Firebase project's credentials.");
+            }
+        }
+
         application.firebase = {
-            projectId  : "split-expense-app-c673a",
-            apiKey     : "AIzaSyC0V8jRmb7-Dh06qdIm95f-_RkZ9S9I0WY",
-            authDomain : "split-expense-app-c673a.firebaseapp.com",
-            databaseId : "(default)"
+            projectId  : env.FIREBASE_PROJECT_ID,
+            apiKey     : env.FIREBASE_API_KEY,
+            authDomain : env.FIREBASE_AUTH_DOMAIN,
+            databaseId : len(env.FIREBASE_DATABASE_ID ?: "") ? env.FIREBASE_DATABASE_ID : "(default)"
         };
         application.appName    = "Split Expense App";
         application.appVersion = "1.0";
@@ -72,6 +80,27 @@ component {
         if (!directoryExists(application.receiptsDir)) {
             directoryCreate(application.receiptsDir);
         }
+    }
+
+    // Minimal .env parser: KEY=VALUE per line, "#" comments, blank lines skipped,
+    // optional surrounding quotes stripped. Returns {} if the file doesn't exist.
+    private function loadEnv(required string path) {
+        var result = {};
+        if (!fileExists(arguments.path)) return result;
+
+        var lines = listToArray(fileRead(arguments.path), chr(10), false, true);
+        for (var line in lines) {
+            var trimmed = trim(line);
+            if (!len(trimmed) || left(trimmed, 1) == "##" || !find("=", trimmed)) continue;
+
+            var key   = trim(left(trimmed, find("=", trimmed) - 1));
+            var value = trim(mid(trimmed, find("=", trimmed) + 1, len(trimmed)));
+            if (len(value) >= 2 && (left(value, 1) == '"' && right(value, 1) == '"' || left(value, 1) == "'" && right(value, 1) == "'")) {
+                value = mid(value, 2, len(value) - 2);
+            }
+            result[key] = value;
+        }
+        return result;
     }
 
 }

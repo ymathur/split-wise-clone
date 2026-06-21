@@ -112,18 +112,22 @@ Found on the **General** tab under **Your project** section.
 
 ## Step 6 — Configure the Application
 
-Open `/Application.cfc` and replace the placeholder values:
+Copy `.env.example` to `.env` and fill in your Firebase project's values:
 
-```cfml
-application.firebase = {
-    projectId  : "YOUR_FIREBASE_PROJECT_ID",      // e.g., split-expense-app-12345
-    apiKey     : "YOUR_FIREBASE_WEB_API_KEY",      // e.g., AIzaSy...
-    authDomain : "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseId : "(default)"
-};
+```bash
+cp .env.example .env
 ```
 
-**Never commit real credentials to source control.** Consider using environment variables or a config file outside the webroot.
+```
+FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+FIREBASE_API_KEY=YOUR_FIREBASE_WEB_API_KEY
+FIREBASE_AUTH_DOMAIN=YOUR_PROJECT_ID.firebaseapp.com
+FIREBASE_DATABASE_ID=(default)
+```
+
+`Application.cfc` loads these at startup. `.env` is gitignored - never commit real
+credentials to source control. If `.env` is missing or incomplete, the app will fail
+to start with a clear error telling you which key is missing.
 
 ---
 
@@ -261,7 +265,7 @@ Ensure the project root (`SplitWiseClone/`) is your Lucee webroot or is mapped a
 
 | Problem | Solution |
 |---|---|
-| Blank page after login | Check that Firebase projectId and apiKey are correct in Application.cfc |
+| Blank page after login | Check that FIREBASE_PROJECT_ID and FIREBASE_API_KEY in `.env` are correct |
 | "Missing or insufficient permissions" | Check Firebase security rules are published |
 | 401 errors from Firestore | ID token may have expired — log out and log back in |
 | Session not persisting | Ensure Lucee session management is enabled and cookies are accepted |
