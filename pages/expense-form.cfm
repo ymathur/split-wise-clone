@@ -24,7 +24,8 @@
     paidByMemberId : "",
     paymentMode    : "Cash",
     splitType      : "Equal",
-    notes          : ""
+    notes          : "",
+    receiptFile    : ""
 }>
 <cfset existingSplits = []>
 
@@ -42,7 +43,8 @@
             paidByMemberId : existing.paidByMemberId,
             paymentMode    : existing.paymentMode,
             splitType      : existing.splitType ?: "Equal",
-            notes          : existing.notes
+            notes          : existing.notes,
+            receiptFile    : existing.receiptFile ?: ""
         }>
         <cfset existingSplits = expCFC.getExpenseSplits(url.id)>
         <cfcatch type="any">
@@ -117,6 +119,34 @@
     </cfif>
 
     <cfif !arrayLen(formErrors)>
+        <!--- Receipt photo upload (optional) - stored outside the webroot, served only
+              via the ownership-gated pages/receipt-view.cfm --->
+        <cfset receiptDestDir = application.receiptsDir & session.userId & "/">
+        <cfif !directoryExists(receiptDestDir)><cfset directoryCreate(receiptDestDir)></cfif>
+        <cfset newFileUploaded = false>
+        <cftry>
+            <cfset upResult = "">
+            <cffile action="upload" filefield="receiptPhoto" destination="#receiptDestDir#" nameconflict="makeunique" result="upResult">
+            <cfif listFindNoCase("jpg,jpeg,png,webp,heic", upResult.clientFileExt) eq 0>
+                <cffile action="delete" file="#receiptDestDir##upResult.serverFile#">
+                <cfset arrayAppend(formErrors, "Receipt must be an image file (jpg, png, webp, or heic).")>
+            <cfelseif upResult.fileSize gt 5242880>
+                <cffile action="delete" file="#receiptDestDir##upResult.serverFile#">
+                <cfset arrayAppend(formErrors, "Receipt photo is too large (max 5MB).")>
+            <cfelse>
+                <cfset formData.receiptFile = session.userId & "/" & upResult.serverFile>
+                <cfset newFileUploaded = true>
+            </cfif>
+            <cfcatch type="any">
+                <!--- No file was selected for this submission - not an error. --->
+            </cfcatch>
+        </cftry>
+        <cfif isDefined("form.removeReceipt") && form.removeReceipt eq "1" && !newFileUploaded>
+            <cfset formData.receiptFile = "REMOVE">
+        </cfif>
+    </cfif>
+
+    <cfif !arrayLen(formErrors)>
         <cftry>
             <cfif isEdit>
                 <cfset expCFC.updateExpense(url.id, formData, splits)>
@@ -166,7 +196,7 @@
 </cfif>
 
 <div class="card form-card">
-<form method="post" id="expenseForm">
+<form method="post" id="expenseForm" enctype="multipart/form-data">
 <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
 
     <!--- Expense Type Toggle --->
@@ -331,6 +361,20 @@
         <label class="form-label" for="notes">Notes</label>
         <textarea id="notes" name="notes" class="form-control" rows="2"
                   placeholder="Optional notes">#htmlEditFormat(formData.notes)#</textarea>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="receiptPhoto">Receipt Photo</label>
+        <cfif len(formData.receiptFile)>
+        <div class="receipt-preview">
+            <img src="/pages/receipt-view.cfm?id=#urlEncodedFormat(isEdit ? url.id : '')#" alt="Current receipt">
+            <label class="receipt-remove-label">
+                <input type="checkbox" name="removeReceipt" value="1"> Remove this receipt
+            </label>
+        </div>
+        </cfif>
+        <input type="file" id="receiptPhoto" name="receiptPhoto" class="form-control" accept="image/*" capture="environment">
+        <small class="form-hint">Optional - a photo of the receipt (max 5MB).</small>
     </div>
 
     <div class="form-actions">

@@ -62,6 +62,15 @@
     </table>
 </div>
 
+<cfif len(expense.receiptFile ?: "")>
+<div class="card">
+    <div class="card-header"><h2>Receipt</h2></div>
+    <a href="/pages/receipt-view.cfm?id=#urlEncodedFormat(expId)#" target="_blank">
+        <img src="/pages/receipt-view.cfm?id=#urlEncodedFormat(expId)#" alt="Receipt" class="receipt-full">
+    </a>
+</div>
+</cfif>
+
 <cfif arrayLen(splits)>
 <div class="card">
     <div class="card-header"><h2>Split Details</h2></div>

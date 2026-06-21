@@ -35,6 +35,7 @@ component {
             "paymentMode"    : arguments.data.paymentMode    ?: "Cash",
             "splitType"      : arguments.data.splitType      ?: "Equal",
             "notes"          : arguments.data.notes          ?: "",
+            "receiptFile"    : arguments.data.receiptFile     ?: "",
             "status"         : "Active",
             "createdAt"      : now,
             "updatedAt"      : now
@@ -140,6 +141,8 @@ component {
             "paymentMode"    : arguments.data.paymentMode    ?: existing.paymentMode,
             "splitType"      : arguments.data.splitType      ?: existing.splitType,
             "notes"          : arguments.data.notes          ?: existing.notes,
+            "receiptFile"    : (arguments.data.receiptFile ?: "") eq "REMOVE" ? ""
+                              : (len(arguments.data.receiptFile ?: "") ? arguments.data.receiptFile : (existing.receiptFile ?: "")),
             "updatedAt"      : now
         };
         var result = variables.fb.updateDocument("expenses", arguments.expenseId, updates, variables.idToken);

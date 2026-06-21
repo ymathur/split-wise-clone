@@ -19,7 +19,7 @@ component {
     }
 
     function onRequestStart(targetPage) {
-        if (!application.keyExists("firebase") || !application.keyExists("currencies")) {
+        if (!application.keyExists("firebase") || !application.keyExists("currencies") || !application.keyExists("receiptsDir")) {
             loadConfig();
         }
     }
@@ -65,6 +65,13 @@ component {
                 ? application.currencySymbols[key]
                 : application.currencySymbols[application.defaultCurrency];
         };
+
+        // Receipt photos live outside the webroot so they can never be served directly -
+        // the only access path is the ownership-gated pages/receipt-view.cfm.
+        application.receiptsDir = "/Users/Yogesh/Documents/ClaudeCoding/SplitWiseClone_receipts/";
+        if (!directoryExists(application.receiptsDir)) {
+            directoryCreate(application.receiptsDir);
+        }
     }
 
 }

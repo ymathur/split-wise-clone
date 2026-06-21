@@ -153,7 +153,7 @@
         <cfset eCur = e.expenseType eq "Personal" ? (acctCurrency[e.accountId] ?: application.defaultCurrency) : (groupCurrency[e.groupId] ?: application.defaultCurrency)>
         <tr>
             <td>#dateFormat(e.date, "dd/mm/yy")#</td>
-            <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
+            <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a><cfif len(e.receiptFile ?: "")> &##128206;</cfif></td>
             <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
             <td><span class="badge badge-<cfif e.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#htmlEditFormat(e.expenseType)#</span></td>
             <td>#htmlEditFormat(e.paymentMode)#</td>
