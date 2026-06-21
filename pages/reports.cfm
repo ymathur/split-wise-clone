@@ -164,6 +164,20 @@
         </div>
         </cfif>
 
+        <cfif structCount(reportData.categoryTotalsByCur)>
+        <div class="card">
+            <div class="card-header"><h2>Category Breakdown</h2></div>
+            <div class="charts-grid">
+                <cfloop collection="#reportData.categoryTotalsByCur#" item="cur">
+                    <div class="chart-box">
+                        <p class="chart-box-label">#application.currencySymbol(cur)# #cur#</p>
+                        <canvas id="personalCatChart_#cur#"></canvas>
+                    </div>
+                </cfloop>
+            </div>
+        </div>
+        </cfif>
+
         <div class="card">
             <div class="card-header"><h2>Expense List (#arrayLen(reportData.expenses)#)</h2></div>
             <cfif arrayLen(reportData.expenses)>
@@ -210,6 +224,17 @@
             </div>
         </div>
 
+        <cfif structCount(reportData.categoryTotals)>
+        <div class="card">
+            <div class="card-header"><h2>Category Breakdown</h2></div>
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <canvas id="groupCatChart"></canvas>
+                </div>
+            </div>
+        </div>
+        </cfif>
+
         <div class="card">
             <div class="card-header"><h2>Member Summary</h2></div>
             <table class="table">
@@ -255,6 +280,35 @@
     </cfif>
 </cfif>
 </cfoutput>
+
+<cfif reportGenerated && reportType eq "personal" && structCount(reportData.categoryTotalsByCur)>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+<cfoutput>const personalCatData = #serializeJSON(reportData.categoryTotalsByCur)#;</cfoutput>
+const chartColors = ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#14b8a6','#ec4899','#6366f1'];
+Object.keys(personalCatData).forEach(cur => {
+    const canvas = document.getElementById('personalCatChart_' + cur);
+    if (!canvas) return;
+    const data = personalCatData[cur];
+    new Chart(canvas, {
+        type: 'pie',
+        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: chartColors }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+});
+</script>
+<cfelseif reportGenerated && reportType eq "group" && structCount(reportData.categoryTotals)>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+<cfoutput>const groupCatData = #serializeJSON(reportData.categoryTotals)#;</cfoutput>
+const chartColors2 = ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#14b8a6','#ec4899','#6366f1'];
+new Chart(document.getElementById('groupCatChart'), {
+    type: 'pie',
+    data: { labels: Object.keys(groupCatData), datasets: [{ data: Object.values(groupCatData), backgroundColor: chartColors2 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+</cfif>
 
 </main>
 <cfinclude template="/includes/footer.cfm">

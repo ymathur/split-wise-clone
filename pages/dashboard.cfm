@@ -27,6 +27,14 @@
     <cfset amtPayableByCur     = {}>
     <cfset amtReceivableByCur  = {}>
 
+    <!--- Chart data: category breakdown and last-6-months trend, both split per currency --->
+    <cfset categoryTotalsByCur = {}>
+    <cfset monthKeys = []>
+    <cfloop from="5" to="0" index="mAgo" step="-1">
+        <cfset arrayAppend(monthKeys, dateFormat(dateAdd("m", -mAgo, now()), "yyyy-mm"))>
+    </cfloop>
+    <cfset monthlyTotalsByCur = {}>
+
     <cfloop array="#recentExp#" index="e">
         <cfif e.expenseType eq "Personal">
             <cfset cur = acctCurrency[e.accountId] ?: application.defaultCurrency>
@@ -34,6 +42,16 @@
         <cfelse>
             <cfset cur = groupCurrency[e.groupId] ?: application.defaultCurrency>
             <cfset totalGroupByCur[cur] = (totalGroupByCur[cur] ?: 0) + val(e.amount)>
+        </cfif>
+
+        <cfif !structKeyExists(categoryTotalsByCur, cur)><cfset categoryTotalsByCur[cur] = {}></cfif>
+        <cfset cat = len(e.category ?: "") ? e.category : "Miscellaneous">
+        <cfset categoryTotalsByCur[cur][cat] = (categoryTotalsByCur[cur][cat] ?: 0) + val(e.amount)>
+
+        <cfset eMonth = left(e.date, 7)>
+        <cfif arrayFind(monthKeys, eMonth)>
+            <cfif !structKeyExists(monthlyTotalsByCur, cur)><cfset monthlyTotalsByCur[cur] = {}></cfif>
+            <cfset monthlyTotalsByCur[cur][eMonth] = (monthlyTotalsByCur[cur][eMonth] ?: 0) + val(e.amount)>
         </cfif>
     </cfloop>
 
@@ -138,6 +156,37 @@
     </div>
 </div>
 
+<cfif structCount(categoryTotalsByCur) || structCount(monthlyTotalsByCur)>
+<div class="charts-row">
+    <cfif structCount(categoryTotalsByCur)>
+    <div class="card">
+        <div class="card-header"><h2>Spending by Category</h2></div>
+        <div class="charts-grid">
+            <cfloop collection="#categoryTotalsByCur#" item="cur">
+                <div class="chart-box">
+                    <p class="chart-box-label">#application.currencySymbol(cur)# #cur#</p>
+                    <canvas id="catChart_#cur#"></canvas>
+                </div>
+            </cfloop>
+        </div>
+    </div>
+    </cfif>
+    <cfif structCount(monthlyTotalsByCur)>
+    <div class="card">
+        <div class="card-header"><h2>Spending Trend (Last 6 Months)</h2></div>
+        <div class="charts-grid">
+            <cfloop collection="#monthlyTotalsByCur#" item="cur">
+                <div class="chart-box">
+                    <p class="chart-box-label">#application.currencySymbol(cur)# #cur#</p>
+                    <canvas id="trendChart_#cur#"></canvas>
+                </div>
+            </cfloop>
+        </div>
+    </div>
+    </cfif>
+</div>
+</cfif>
+
 <div class="quick-actions">
     <a href="/pages/expense-form.cfm"     class="btn btn-primary">+ Add Expense</a>
     <a href="/pages/account-form.cfm"     class="btn btn-secondary">+ New Account</a>
@@ -205,6 +254,54 @@
     </div>
 </div>
 </cfoutput>
+
+<cfif structCount(categoryTotalsByCur) || structCount(monthlyTotalsByCur)>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+<cfoutput>
+const categoryChartData = #serializeJSON(categoryTotalsByCur)#;
+const monthlyChartData  = #serializeJSON(monthlyTotalsByCur)#;
+const monthKeys         = #serializeJSON(monthKeys)#;
+</cfoutput>
+
+const chartColors = ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#14b8a6','#ec4899','#6366f1'];
+
+Object.keys(categoryChartData).forEach(cur => {
+    const canvas = document.getElementById('catChart_' + cur);
+    if (!canvas) return;
+    const data = categoryChartData[cur];
+    new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(data),
+            datasets: [{ data: Object.values(data), backgroundColor: chartColors }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+});
+
+Object.keys(monthlyChartData).forEach(cur => {
+    const canvas = document.getElementById('trendChart_' + cur);
+    if (!canvas) return;
+    const data = monthlyChartData[cur];
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: monthKeys,
+            datasets: [{
+                label: cur,
+                data: monthKeys.map(m => data[m] || 0),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+});
+</script>
+</cfif>
 
 </main>
 <cfinclude template="/includes/footer.cfm">

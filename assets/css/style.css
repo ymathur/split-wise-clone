@@ -90,6 +90,10 @@ ul { list-style: none; }
 /* ── Stats grid ─────────────────────────────────────────────────────── */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .stats-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; padding: 16px; }
+.chart-box { position: relative; height: 240px; }
+.chart-box-label { text-align: center; font-weight: 600; color: var(--muted); margin: 0 0 8px; font-size: .85rem; }
 .stat-card { background: var(--card-bg); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); text-align: center; border-top: 3px solid transparent; }
 .stat-card .stat-icon { font-size: 1.6rem; margin-bottom: 4px; }
 .stat-card .stat-value { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }

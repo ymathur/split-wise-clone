@@ -29,6 +29,7 @@ component {
 
         var total        = 0;
         var categoryTotals = {};
+        var categoryTotalsByCur = {};
         var totalByCur      = {};
         for (var e in expenses) {
             total += val(e.amount);
@@ -39,6 +40,10 @@ component {
             var cur = acctCurrency[e.accountId] ?: application.defaultCurrency;
             if (!structKeyExists(totalByCur, cur)) totalByCur[cur] = 0;
             totalByCur[cur] += val(e.amount);
+
+            if (!structKeyExists(categoryTotalsByCur, cur)) categoryTotalsByCur[cur] = {};
+            if (!structKeyExists(categoryTotalsByCur[cur], cat)) categoryTotalsByCur[cur][cat] = 0;
+            categoryTotalsByCur[cur][cat] += val(e.amount);
         }
 
         var openingAmount = 0;
@@ -52,14 +57,15 @@ component {
         }
 
         return {
-            expenses       : expenses,
-            totalExpenses  : total,
-            totalByCur     : totalByCur,
-            openingAmount  : openingAmount,
-            balance        : openingAmount - total,
-            categoryTotals : categoryTotals,
-            currency       : currency,
-            acctCurrency   : acctCurrency
+            expenses            : expenses,
+            totalExpenses       : total,
+            totalByCur          : totalByCur,
+            openingAmount       : openingAmount,
+            balance             : openingAmount - total,
+            categoryTotals      : categoryTotals,
+            categoryTotalsByCur : categoryTotalsByCur,
+            currency            : currency,
+            acctCurrency        : acctCurrency
         };
     }
 
@@ -100,6 +106,7 @@ component {
         var totalSpend  = 0;
         var memberPaid  = {};
         var memberShare = {};
+        var categoryTotals = {};
         for (var m in members) {
             memberPaid[m.memberId]  = 0;
             memberShare[m.memberId] = 0;
@@ -110,6 +117,9 @@ component {
             if (len(e.paidByMemberId) && structKeyExists(memberPaid, e.paidByMemberId)) {
                 memberPaid[e.paidByMemberId] += val(e.amount);
             }
+            var cat = e.category ?: "Miscellaneous";
+            if (!structKeyExists(categoryTotals, cat)) categoryTotals[cat] = 0;
+            categoryTotals[cat] += val(e.amount);
         }
         for (var s in allSplits) {
             if (structKeyExists(memberShare, s.memberId)) {
@@ -120,15 +130,16 @@ component {
         var balances = stlCFC.calculateBalances(arguments.groupId, members, expenses, allSplits, stls);
 
         return {
-            group       : grp,
-            members     : members,
-            memberMap   : memberMap,
-            expenses    : expenses,
-            settlements : stls,
-            totalSpend  : totalSpend,
-            memberPaid  : memberPaid,
-            memberShare : memberShare,
-            balances    : balances
+            group          : grp,
+            members        : members,
+            memberMap      : memberMap,
+            expenses       : expenses,
+            settlements    : stls,
+            totalSpend     : totalSpend,
+            memberPaid     : memberPaid,
+            memberShare    : memberShare,
+            balances       : balances,
+            categoryTotals : categoryTotals
         };
     }
 
