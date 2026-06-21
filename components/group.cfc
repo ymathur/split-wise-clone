@@ -100,6 +100,7 @@ component {
     }
 
     function getMembers(required string groupId) {
+        getGroup(arguments.groupId); // verify ownership before listing members
         var filters = [
             variables.fb.fieldFilter("groupId", "EQUAL", arguments.groupId)
         ];
@@ -114,13 +115,18 @@ component {
         return list;
     }
 
+    // Verifies the member belongs to a group owned by the current user before
+    // returning it. Firestore rules also enforce this, but checking here too
+    // gives a clean NotFoundError instead of relying solely on the rules layer.
     function getMember(required string memberId) {
         var result = variables.fb.getDocument("groupMembers", arguments.memberId, variables.idToken);
         if (!result.success) throw(type="NotFoundError", message="Member not found");
+        getGroup(result.data.groupId); // throws NotFoundError if not owned
         return result.data;
     }
 
     function updateMember(required string memberId, required struct data) {
+        getMember(arguments.memberId); // verify ownership
         var updates = {
             "name"   : arguments.data.name   ?: "",
             "email"  : arguments.data.email  ?: "",
@@ -131,6 +137,7 @@ component {
     }
 
     function removeMember(required string memberId) {
+        getMember(arguments.memberId); // verify ownership
         var result = variables.fb.softDelete("groupMembers", arguments.memberId, variables.idToken);
         if (!result.success) throw(type="FirestoreError", message="Failed to remove member");
     }

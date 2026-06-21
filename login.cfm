@@ -84,11 +84,14 @@ function showError(msg) {
 
 function friendlyError(err) {
     const map = {
-        'auth/user-not-found'   : 'No account found with this email.',
-        'auth/wrong-password'   : 'Incorrect password.',
-        'auth/invalid-email'    : 'Invalid email address.',
-        'auth/too-many-requests': 'Too many attempts. Please try again later.',
-        'auth/invalid-credential': 'Invalid email or password.'
+        // user-not-found and wrong-password are intentionally mapped to the same
+        // generic message - distinguishing them would let an attacker enumerate
+        // which emails have accounts.
+        'auth/user-not-found'    : 'Invalid email or password.',
+        'auth/wrong-password'    : 'Invalid email or password.',
+        'auth/invalid-credential': 'Invalid email or password.',
+        'auth/invalid-email'     : 'Invalid email address.',
+        'auth/too-many-requests' : 'Too many attempts. Please try again later.'
     };
     return map[err.code] || err.message;
 }

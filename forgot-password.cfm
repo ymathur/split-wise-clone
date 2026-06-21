@@ -38,17 +38,24 @@ document.getElementById('fpForm').addEventListener('submit', async (e) => {
     btn.disabled    = true;
     btn.textContent = 'Sending…';
 
+    const genericSuccess = 'If an account exists for that email, a reset link has been sent. Check your inbox.';
+
     try {
         await firebase.auth().sendPasswordResetEmail(email);
-        succBox.textContent   = 'Reset link sent! Check your email inbox.';
+        succBox.textContent   = genericSuccess;
         succBox.style.display = 'block';
     } catch (err) {
-        const map = {
-            'auth/user-not-found' : 'No account found with this email.',
-            'auth/invalid-email'  : 'Invalid email address.'
-        };
-        errBox.textContent   = map[err.code] || err.message;
-        errBox.style.display = 'block';
+        if (err.code === 'auth/user-not-found') {
+            // Don't reveal whether the email is registered - avoids user enumeration.
+            succBox.textContent   = genericSuccess;
+            succBox.style.display = 'block';
+        } else {
+            const map = {
+                'auth/invalid-email' : 'Invalid email address.'
+            };
+            errBox.textContent   = map[err.code] || err.message;
+            errBox.style.display = 'block';
+        }
     } finally {
         btn.disabled    = false;
         btn.textContent = 'Send Reset Link';

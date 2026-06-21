@@ -51,7 +51,7 @@
         <div class="list-card-main">
             <div class="list-card-title">
                 <a href="/pages/group-detail.cfm?id=#urlEncodedFormat(grp._id)#">#htmlEditFormat(grp.groupName)#</a>
-                <span class="badge badge-#lCase(grp.status)#">#grp.status#</span>
+                <span class="badge badge-#htmlEditFormat(lCase(grp.status))#">#htmlEditFormat(grp.status)#</span>
             </div>
             <div class="list-card-meta">
                 #memberCount# member(s) &bull;

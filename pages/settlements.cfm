@@ -103,10 +103,10 @@
             <td>#htmlEditFormat(groupNames[s.groupId] ?: s.groupId)#</td>
             <td>#htmlEditFormat(memberNames[s.fromMemberId] ?: s.fromMemberId)#</td>
             <td>#htmlEditFormat(memberNames[s.toMemberId]   ?: s.toMemberId)#</td>
-            <td>#s.paymentMode#</td>
+            <td>#htmlEditFormat(s.paymentMode)#</td>
             <td class="text-right">#application.currency##numberFormat(s.amount, "9,999.00")#</td>
             <td>
-                <span class="badge badge-<cfif s.status eq 'Paid'>success<cfelse>warning</cfif>">#s.status#</span>
+                <span class="badge badge-<cfif s.status eq 'Paid'>success<cfelse>warning</cfif>">#htmlEditFormat(s.status)#</span>
             </td>
             <td class="actions">
                 <cfif s.status eq "Pending">

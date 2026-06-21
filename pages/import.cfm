@@ -34,7 +34,10 @@
             <cfset uploadResult = "">
             <cffile action="upload" filefield="csvFile" destination="#uploadDir#" nameconflict="makeunique" accept="text/csv,application/vnd.ms-excel,text/plain" result="uploadResult">
 
-            <cfif listFindNoCase("csv,txt", uploadResult.clientFileExt) eq 0>
+            <cfif uploadResult.fileSize gt 2097152>
+                <cfset arrayAppend(pageErrors, "File is too large (max 2MB).")>
+                <cffile action="delete" file="#uploadResult.serverDirectory#/#uploadResult.serverFile#">
+            <cfelseif listFindNoCase("csv,txt", uploadResult.clientFileExt) eq 0>
                 <cfset arrayAppend(pageErrors, "Please upload a .csv file.")>
                 <cffile action="delete" file="#uploadResult.serverDirectory#/#uploadResult.serverFile#">
             <cfelse>

@@ -21,7 +21,10 @@ service cloud.firestore {
     }
 
     match /groupMembers/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, update, delete: if request.auth != null &&
+        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.ownerUserId == request.auth.uid;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.ownerUserId == request.auth.uid;
     }
 
     match /expenses/{docId} {
@@ -32,7 +35,10 @@ service cloud.firestore {
     }
 
     match /expenseSplits/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, update, delete: if request.auth != null &&
+        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.ownerUserId == request.auth.uid;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.ownerUserId == request.auth.uid;
     }
 
     match /settlements/{docId} {

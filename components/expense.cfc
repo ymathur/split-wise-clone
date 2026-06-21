@@ -107,6 +107,7 @@ component {
     }
 
     function getExpenseSplits(required string expenseId) {
+        getExpense(arguments.expenseId); // verify ownership before listing splits
         var filters = [variables.fb.fieldFilter("expenseId", "EQUAL", arguments.expenseId)];
         var result  = variables.fb.queryCollection(
             collection = "expenseSplits",

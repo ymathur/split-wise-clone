@@ -48,7 +48,7 @@
         <div class="list-card-main">
             <div class="list-card-title">
                 <a href="/pages/expenses.cfm?accountId=#urlEncodedFormat(acc._id)#">#htmlEditFormat(acc.accountName)#</a>
-                <span class="badge badge-#lCase(acc.status)#">#acc.status#</span>
+                <span class="badge badge-#htmlEditFormat(lCase(acc.status))#">#htmlEditFormat(acc.status)#</span>
             </div>
             <div class="list-card-meta">
                 Started #dateFormat(acc.startDate, "dd mmm yyyy")#

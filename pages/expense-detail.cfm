@@ -30,8 +30,8 @@
 <div class="page-header">
     <div>
         <h1>#htmlEditFormat(expense.description)#</h1>
-        <span class="badge badge-<cfif expense.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#expense.expenseType#</span>
-        <span class="badge">#expense.category#</span>
+        <span class="badge badge-<cfif expense.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#htmlEditFormat(expense.expenseType)#</span>
+        <span class="badge">#htmlEditFormat(expense.category)#</span>
     </div>
     <div class="header-actions">
         <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(expId)#" class="btn btn-outline">Edit</a>
@@ -43,12 +43,12 @@
     <table class="detail-table">
         <tr><th>Date</th>         <td>#dateFormat(expense.date, "dd mmm yyyy")#</td></tr>
         <tr><th>Amount</th>       <td><strong>#application.currency##numberFormat(expense.amount, "9,999.00")#</strong></td></tr>
-        <tr><th>Category</th>     <td>#expense.category#</td></tr>
-        <tr><th>Payment Mode</th> <td>#expense.paymentMode#</td></tr>
-        <tr><th>Type</th>         <td>#expense.expenseType#</td></tr>
+        <tr><th>Category</th>     <td>#htmlEditFormat(expense.category)#</td></tr>
+        <tr><th>Payment Mode</th> <td>#htmlEditFormat(expense.paymentMode)#</td></tr>
+        <tr><th>Type</th>         <td>#htmlEditFormat(expense.expenseType)#</td></tr>
         <cfif expense.expenseType eq "Group" && len(expense.paidByMemberId)>
         <tr><th>Paid By</th>      <td>#htmlEditFormat(memberNames[expense.paidByMemberId] ?: "Unknown")#</td></tr>
-        <tr><th>Split Type</th>   <td>#expense.splitType ?: "Equal"#</td></tr>
+        <tr><th>Split Type</th>   <td>#htmlEditFormat(expense.splitType ?: "Equal")#</td></tr>
         </cfif>
         <cfif len(expense.notes)>
         <tr><th>Notes</th>        <td>#htmlEditFormat(expense.notes)#</td></tr>

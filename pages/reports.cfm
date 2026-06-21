@@ -167,8 +167,8 @@
                     <tr>
                         <td>#dateFormat(e.date, "dd mmm yyyy")#</td>
                         <td>#htmlEditFormat(e.description)#</td>
-                        <td><span class="badge">#e.category#</span></td>
-                        <td>#e.paymentMode#</td>
+                        <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
+                        <td>#htmlEditFormat(e.paymentMode)#</td>
                         <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
                     </tr>
                 </cfloop>
@@ -233,7 +233,7 @@
                     <tr>
                         <td>#dateFormat(e.date, "dd mmm yyyy")#</td>
                         <td>#htmlEditFormat(e.description)#</td>
-                        <td><span class="badge">#e.category#</span></td>
+                        <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                         <td>#htmlEditFormat(reportData.memberMap[e.paidByMemberId] ?: "—")#</td>
                         <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
                     </tr>

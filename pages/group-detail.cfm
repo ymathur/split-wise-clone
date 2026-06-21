@@ -47,7 +47,7 @@
 <div class="page-header">
     <div>
         <h1>#htmlEditFormat(grp.groupName)#</h1>
-        <span class="badge badge-#lCase(grp.status)#">#grp.status#</span>
+        <span class="badge badge-#htmlEditFormat(lCase(grp.status))#">#htmlEditFormat(grp.status)#</span>
         <cfif len(grp.description)><p class="text-muted">#htmlEditFormat(grp.description)#</p></cfif>
     </div>
     <div class="header-actions">
@@ -160,7 +160,7 @@
             <tr>
                 <td>#dateFormat(e.date, "dd/mm/yy")#</td>
                 <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
-                <td><span class="badge">#e.category#</span></td>
+                <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                 <td>#len(e.paidByMemberId) && structKeyExists(memberNames, e.paidByMemberId) ? htmlEditFormat(memberNames[e.paidByMemberId]) : "—"#</td>
                 <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
                 <td>

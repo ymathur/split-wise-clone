@@ -124,7 +124,7 @@
                 <tr>
                     <td>#dateFormat(e.date, "dd/mm")#</td>
                     <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
-                    <td><span class="badge">#e.category#</span></td>
+                    <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
                     <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
                 </tr>
             </cfloop>

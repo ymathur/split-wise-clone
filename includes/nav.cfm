@@ -13,7 +13,7 @@
         <a href="/pages/settlements.cfm" class="nav-link<cfif cgi.script_name contains 'settlement'> active</cfif>">&##129534; Settlements</a>
         <a href="/pages/reports.cfm"    class="nav-link<cfif cgi.script_name contains 'report'> active</cfif>">&##128202; Reports</a>
         <div class="nav-divider"></div>
-        <a href="/pages/profile.cfm"    class="nav-link<cfif cgi.script_name contains 'profile'> active</cfif>">&##128100; #session.userName#</a>
+        <a href="/pages/profile.cfm"    class="nav-link<cfif cgi.script_name contains 'profile'> active</cfif>">&##128100; #htmlEditFormat(session.userName)#</a>
         <a href="/logout.cfm"           class="nav-link nav-logout">&##128682; Logout</a>
     </div>
 </nav>

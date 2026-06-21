@@ -133,9 +133,9 @@
         <tr>
             <td>#dateFormat(e.date, "dd/mm/yy")#</td>
             <td><a href="/pages/expense-detail.cfm?id=#urlEncodedFormat(e._id)#">#htmlEditFormat(e.description)#</a></td>
-            <td><span class="badge">#e.category#</span></td>
-            <td><span class="badge badge-<cfif e.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#e.expenseType#</span></td>
-            <td>#e.paymentMode#</td>
+            <td><span class="badge">#htmlEditFormat(e.category)#</span></td>
+            <td><span class="badge badge-<cfif e.expenseType eq 'Group'>teal<cfelse>blue</cfif>">#htmlEditFormat(e.expenseType)#</span></td>
+            <td>#htmlEditFormat(e.paymentMode)#</td>
             <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
             <td class="actions">
                 <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(e._id)#"   class="btn btn-xs btn-outline">Edit</a>
