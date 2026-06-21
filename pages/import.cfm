@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Import Expenses">
 
 <cfset fb        = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -177,6 +178,7 @@
     <p class="text-muted">Upload a CSV of past expenses. You'll get a chance to review and pick which rows to import before anything is saved.</p>
 
     <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
         <input type="hidden" name="stage" value="preview">
 
         <div class="form-group">
@@ -253,6 +255,7 @@ function togglePersonalGroup(type) {
     </p>
 
     <form method="post">
+        <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
         <input type="hidden" name="stage" value="commit">
         <input type="hidden" name="expenseType" value="#htmlEditFormat(expenseType)#">
         <input type="hidden" name="targetId" value="#htmlEditFormat(targetId)#">

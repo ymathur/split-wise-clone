@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 
 <cfset groupId = url.groupId ?: "">
 <cfif !len(groupId)><cflocation url="/pages/groups.cfm" addtoken="false"></cfif>
@@ -34,9 +35,9 @@
 </cfif>
 
 <!--- Handle remove member --->
-<cfif isDefined("url.remove") && len(url.remove)>
+<cfif cgi.request_method eq "POST" && (form.action ?: "") eq "remove" && len(form.removeId ?: "")>
     <cftry>
-        <cfset grpCFC.removeMember(url.remove)>
+        <cfset grpCFC.removeMember(form.removeId)>
         <cflocation url="/pages/group-members.cfm?groupId=#urlEncodedFormat(groupId)#&removed=1" addtoken="false">
         <cfcatch type="any">
             <cfset removeError = cfcatch.message>
@@ -79,9 +80,12 @@
                     <td>#len(m.email) ? htmlEditFormat(m.email) : "—"#</td>
                     <td>#len(m.mobile) ? htmlEditFormat(m.mobile) : "—"#</td>
                     <td>
-                        <a href="?groupId=#urlEncodedFormat(groupId)#&remove=#urlEncodedFormat(m.memberId)#"
-                           class="btn btn-xs btn-danger"
-                           onclick="return confirm('Remove #htmlEditFormat(jsStringFormat(m.name))#?')">Remove</a>
+                        <form method="post" action="/pages/group-members.cfm?groupId=#urlEncodedFormat(groupId)#" class="inline-form" onsubmit="return confirm('Remove #htmlEditFormat(jsStringFormat(m.name))#?')">
+                            <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="removeId" value="#htmlEditFormat(m.memberId)#">
+                            <button type="submit" class="btn btn-xs btn-danger">Remove</button>
+                        </form>
                     </td>
                 </tr>
             </cfloop>
@@ -102,8 +106,9 @@
         </div>
         </cfif>
 
-        <form method="post">
+        <form method="post" action="/pages/group-members.cfm?groupId=#urlEncodedFormat(groupId)#">
             <input type="hidden" name="action" value="add">
+            <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
             <div class="form-group">
                 <label class="form-label" for="memberName">Name <span class="required">*</span></label>
                 <input type="text" id="memberName" name="memberName" class="form-control"

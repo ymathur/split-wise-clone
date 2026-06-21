@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Settlements">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -41,9 +42,9 @@
 </cftry>
 
 <!--- Handle mark as paid --->
-<cfif isDefined("url.markPaid") && len(url.markPaid)>
+<cfif cgi.request_method eq "POST" && (form.action ?: "") eq "markPaid" && len(form.markPaidId ?: "")>
     <cftry>
-        <cfset stlCFC.markAsPaid(url.markPaid)>
+        <cfset stlCFC.markAsPaid(form.markPaidId)>
         <cflocation url="/pages/settlements.cfm?paid=1" addtoken="false">
         <cfcatch type="any">
             <cfset paidError = cfcatch.message>
@@ -110,8 +111,12 @@
             </td>
             <td class="actions">
                 <cfif s.status eq "Pending">
-                <a href="?markPaid=#urlEncodedFormat(s._id)#" class="btn btn-xs btn-success"
-                   onclick="return confirm('Mark as paid?')">Mark Paid</a>
+                <form method="post" class="inline-form" onsubmit="return confirm('Mark as paid?')">
+                    <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+                    <input type="hidden" name="action" value="markPaid">
+                    <input type="hidden" name="markPaidId" value="#htmlEditFormat(s._id)#">
+                    <button type="submit" class="btn btn-xs btn-success">Mark Paid</button>
+                </form>
                 </cfif>
             </td>
         </tr>

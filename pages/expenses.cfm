@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Expenses">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -32,9 +33,9 @@
 </cftry>
 
 <!--- Handle delete --->
-<cfif isDefined("url.delete") && len(url.delete)>
+<cfif cgi.request_method eq "POST" && (form.action ?: "") eq "delete" && len(form.deleteId ?: "")>
     <cftry>
-        <cfset expCFC.deleteExpense(url.delete)>
+        <cfset expCFC.deleteExpense(form.deleteId)>
         <cflocation url="/pages/expenses.cfm?deleted=1" addtoken="false">
         <cfcatch type="any">
             <cfset deleteError = cfcatch.message>
@@ -139,8 +140,12 @@
             <td class="text-right">#application.currency##numberFormat(e.amount, "9,999.00")#</td>
             <td class="actions">
                 <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(e._id)#"   class="btn btn-xs btn-outline">Edit</a>
-                <a href="?delete=#urlEncodedFormat(e._id)#" class="btn btn-xs btn-danger"
-                   onclick="return confirm('Delete this expense?')">Del</a>
+                <form method="post" class="inline-form" onsubmit="return confirm('Delete this expense?')">
+                    <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="deleteId" value="#htmlEditFormat(e._id)#">
+                    <button type="submit" class="btn btn-xs btn-danger">Del</button>
+                </form>
             </td>
         </tr>
     </cfloop>

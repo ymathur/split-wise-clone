@@ -15,6 +15,7 @@ component {
         session.userName  = "";
         session.userEmail = "";
         session.idToken   = "";
+        session.csrfToken = lCase(hash(createUUID() & createUUID() & getTickCount(), "SHA-256"));
     }
 
     function onRequestStart(targetPage) {

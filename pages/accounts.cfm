@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Accounts">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -64,9 +65,12 @@
             <a href="/pages/account-form.cfm?id=#urlEncodedFormat(acc._id)#" class="btn btn-sm btn-outline">Edit</a>
             <a href="/pages/expenses.cfm?accountId=#urlEncodedFormat(acc._id)#" class="btn btn-sm btn-outline">Expenses</a>
             <a href="/pages/export.cfm?type=personal&accountId=#urlEncodedFormat(acc._id)#" class="btn btn-sm btn-outline">Export CSV</a>
-            <a href="?delete=#urlEncodedFormat(acc._id)#" class="btn btn-sm btn-danger"
-               onclick="return confirm('Delete this account?')"
-               title="Delete">Delete</a>
+            <form method="post" class="inline-form" onsubmit="return confirm('Delete this account?')">
+                <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="deleteId" value="#htmlEditFormat(acc._id)#">
+                <button type="submit" class="btn btn-sm btn-danger" title="Delete">Delete</button>
+            </form>
         </div>
     </div>
     <cfcatch type="any"><cfcontinue></cfcatch>
@@ -84,9 +88,9 @@
 </cfoutput>
 
 <!--- Handle delete --->
-<cfif isDefined("url.delete") && len(url.delete)>
+<cfif cgi.request_method eq "POST" && (form.action ?: "") eq "delete" && len(form.deleteId ?: "")>
     <cftry>
-        <cfset accCFC.deleteAccount(url.delete)>
+        <cfset accCFC.deleteAccount(form.deleteId)>
         <cflocation url="/pages/accounts.cfm?deleted=1" addtoken="false">
         <cfcatch type="any">
             <cfoutput><div class="alert alert-danger">#htmlEditFormat(cfcatch.message)#</div></cfoutput>

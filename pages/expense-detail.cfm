@@ -82,8 +82,12 @@
 
 <div class="page-actions">
     <a href="/pages/expense-form.cfm?id=#urlEncodedFormat(expId)#" class="btn btn-primary">Edit Expense</a>
-    <a href="/pages/expenses.cfm?delete=#urlEncodedFormat(expId)#" class="btn btn-danger"
-       onclick="return confirm('Delete this expense?')">Delete Expense</a>
+    <form method="post" action="/pages/expenses.cfm" class="inline-form" onsubmit="return confirm('Delete this expense?')">
+        <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="deleteId" value="#htmlEditFormat(expId)#">
+        <button type="submit" class="btn btn-danger">Delete Expense</button>
+    </form>
     <cfif expense.expenseType eq "Group" && len(expense.groupId)>
     <a href="/pages/group-detail.cfm?id=#urlEncodedFormat(expense.groupId)#" class="btn btn-outline">Back to Group</a>
     </cfif>

@@ -66,6 +66,9 @@
 <cfif isDefined("dashError")>
     <div class="alert alert-danger">#htmlEditFormat(dashError)#</div>
 </cfif>
+<cfif isDefined("url.error") && url.error eq "invalid_request">
+    <div class="alert alert-danger">Your request could not be verified (it may have expired). Please try again.</div>
+</cfif>
 
 <div class="stats-grid">
     <div class="stat-card stat-blue">

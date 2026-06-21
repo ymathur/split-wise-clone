@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Groups">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -13,9 +14,9 @@
     </cfcatch>
 </cftry>
 
-<cfif isDefined("url.delete") && len(url.delete)>
+<cfif cgi.request_method eq "POST" && (form.action ?: "") eq "delete" && len(form.deleteId ?: "")>
     <cftry>
-        <cfset grpCFC.deleteGroup(url.delete)>
+        <cfset grpCFC.deleteGroup(form.deleteId)>
         <cflocation url="/pages/groups.cfm?deleted=1" addtoken="false">
         <cfcatch type="any">
             <cfset deleteError = cfcatch.message>
@@ -66,8 +67,12 @@
             <a href="/pages/group-detail.cfm?id=#urlEncodedFormat(grp._id)#"  class="btn btn-sm btn-primary">View</a>
             <a href="/pages/group-form.cfm?id=#urlEncodedFormat(grp._id)#"    class="btn btn-sm btn-outline">Edit</a>
             <a href="/pages/group-members.cfm?groupId=#urlEncodedFormat(grp._id)#" class="btn btn-sm btn-outline">Members</a>
-            <a href="?delete=#urlEncodedFormat(grp._id)#" class="btn btn-sm btn-danger"
-               onclick="return confirm('Delete this group?')">Delete</a>
+            <form method="post" class="inline-form" onsubmit="return confirm('Delete this group?')">
+                <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="deleteId" value="#htmlEditFormat(grp._id)#">
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
         </div>
     </div>
 </cfloop>

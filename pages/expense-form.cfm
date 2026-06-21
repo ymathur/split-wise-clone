@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
 <cfset expCFC = new components.expense(fb, session.userId, session.idToken)>
@@ -155,6 +156,7 @@
 
 <div class="card form-card">
 <form method="post" id="expenseForm">
+<input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
 
     <!--- Expense Type Toggle --->
     <div class="form-group">

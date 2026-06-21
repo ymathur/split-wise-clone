@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "New Settlement">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
@@ -78,6 +79,7 @@
 
 <div class="card form-card">
 <form method="post">
+    <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
     <div class="form-group">
         <label class="form-label" for="groupId">Group <span class="required">*</span></label>
         <select id="groupId" name="groupId" class="form-control" required

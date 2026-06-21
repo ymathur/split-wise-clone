@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 
 <cfset fb     = new components.firebase(application.firebase.projectId, application.firebase.apiKey)>
 <cfset accCFC = new components.account(fb, session.userId, session.idToken)>
@@ -71,6 +72,7 @@
 
 <div class="card form-card">
 <form method="post">
+    <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
     <div class="form-group">
         <label class="form-label" for="accountName">Account Name <span class="required">*</span></label>
         <input type="text" id="accountName" name="accountName" class="form-control"

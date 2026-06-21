@@ -1,4 +1,5 @@
 <cfinclude template="/includes/authCheck.cfm">
+<cfinclude template="/includes/csrfCheck.cfm">
 <cfset pageTitle = "Profile">
 <cfset formErrors = []>
 <cfset saveSuccess = false>
@@ -42,6 +43,7 @@
 
 <div class="card form-card">
     <form method="post">
+        <input type="hidden" name="csrfToken" value="#htmlEditFormat(session.csrfToken)#">
         <div class="form-group">
             <label class="form-label" for="name">Display Name <span class="required">*</span></label>
             <input type="text" id="name" name="name" class="form-control"
