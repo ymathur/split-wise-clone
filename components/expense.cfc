@@ -107,8 +107,15 @@ component {
     }
 
     function getExpenseSplits(required string expenseId) {
-        getExpense(arguments.expenseId); // verify ownership before listing splits
-        var filters = [variables.fb.fieldFilter("expenseId", "EQUAL", arguments.expenseId)];
+        var expense = getExpense(arguments.expenseId); // verify ownership before listing splits
+        // groupId must be included as an equality filter alongside expenseId: Firestore
+        // rules can't statically verify a get()-based ownership check unless the field it
+        // depends on (groupId) is pinned by the query's own filters, otherwise it rejects
+        // the whole query outright (even for the legitimate owner), not just per-document.
+        var filters = [
+            variables.fb.fieldFilter("expenseId", "EQUAL", arguments.expenseId),
+            variables.fb.fieldFilter("groupId",   "EQUAL", expense.groupId)
+        ];
         var result  = variables.fb.queryCollection(
             collection = "expenseSplits",
             filters    = filters,
