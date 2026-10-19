@@ -28,6 +28,7 @@
     receiptFile    : ""
 }>
 <cfset existingSplits = []>
+<cfset originalAccountId = "">
 
 <cfif isEdit>
     <cftry>
@@ -47,6 +48,7 @@
             receiptFile    : existing.receiptFile ?: ""
         }>
         <cfset existingSplits = expCFC.getExpenseSplits(url.id)>
+        <cfset originalAccountId = existing.accountId>
         <cfcatch type="any">
             <cflocation url="/pages/expenses.cfm" addtoken="false">
         </cfcatch>
@@ -83,6 +85,12 @@
     </cfif>
     <cfif formData.expenseType eq "Personal" && !len(formData.accountId)>
         <cfset arrayAppend(formErrors, "Please select an account for personal expenses")>
+    <cfelseif formData.expenseType eq "Personal" && formData.accountId neq originalAccountId>
+        <cfloop array="#accounts#" index="a">
+            <cfif a._id eq formData.accountId && a.status eq "Closed">
+                <cfset arrayAppend(formErrors, "This account is closed. Please choose an active account.")>
+            </cfif>
+        </cfloop>
     </cfif>
 
     <!--- Parse splits from form --->
@@ -221,6 +229,8 @@
             <select id="accountId" name="accountId" class="form-control" onchange="updateAmountCurrency()">
                 <option value="">-- Select Account --</option>
                 <cfloop array="#accounts#" index="a">
+                    <!--- Closed accounts are hidden, except the one an existing expense already belongs to --->
+                    <cfif a.status eq "Closed" && a._id neq originalAccountId><cfcontinue></cfif>
                     <option value="#htmlEditFormat(a._id)#" data-currency="#htmlEditFormat(a.currency)#" <cfif formData.accountId eq a._id>selected</cfif>>#htmlEditFormat(a.accountName)#</option>
                 </cfloop>
             </select>

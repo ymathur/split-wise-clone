@@ -126,6 +126,9 @@
             <div class="stat-card stat-blue">
                 <div class="stat-value">#reportCurSym##numberFormat(reportData.openingAmount, "9,999.00")#</div>
                 <div class="stat-label">Opening Amount</div>
+                <cfif reportData.cashIn neq 0>
+                    <div class="text-muted">Cash in/out: #reportCurSym##numberFormat(reportData.cashIn, "9,999.00")#</div>
+                </cfif>
             </div>
             <div class="stat-card stat-red">
                 <div class="stat-value">

@@ -29,6 +29,12 @@
 
         <cfif !len(targetId)>
             <cfset arrayAppend(pageErrors, "Please select " & (expenseType eq "Group" ? "a group" : "an account") & ".")>
+        <cfelseif expenseType neq "Group">
+            <cfloop array="#accounts#" index="a">
+                <cfif a._id eq targetId && a.status eq "Closed">
+                    <cfset arrayAppend(pageErrors, "This account is closed. Please choose an active account.")>
+                </cfif>
+            </cfloop>
         </cfif>
 
         <cfif !arrayLen(pageErrors)>
@@ -206,6 +212,7 @@
                 <select id="accountId" name="accountId" class="form-control">
                     <option value="">-- Select Account --</option>
                     <cfloop array="#accounts#" index="a">
+                        <cfif a.status eq "Closed"><cfcontinue></cfif>
                         <option value="#htmlEditFormat(a._id)#">#htmlEditFormat(a.accountName)#</option>
                     </cfloop>
                 </select>

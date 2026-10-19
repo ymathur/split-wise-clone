@@ -47,11 +47,13 @@ component {
         }
 
         var openingAmount = 0;
+        var cashIn         = 0;
         var currency       = "";
         if (structKeyExists(filters, "accountId") && len(filters.accountId)) {
             try {
                 var acc = accCFC.getAccount(filters.accountId);
                 openingAmount = val(acc.openingAmount);
+                cashIn        = accCFC.getAccountBalance(filters.accountId).cashIn;
                 currency      = acc.currency;
             } catch (any e) {}
         }
@@ -61,7 +63,8 @@ component {
             totalExpenses       : total,
             totalByCur          : totalByCur,
             openingAmount       : openingAmount,
-            balance             : openingAmount - total,
+            cashIn              : cashIn,
+            balance             : openingAmount + cashIn - total,
             categoryTotals      : categoryTotals,
             categoryTotalsByCur : categoryTotalsByCur,
             currency            : currency,

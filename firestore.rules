@@ -41,6 +41,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.ownerUserId == request.auth.uid;
     }
 
+    match /cashTransfers/{docId} {
+      allow read, write: if request.auth != null &&
+        (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+    }
+
     match /settlements/{docId} {
       allow read, write: if request.auth != null &&
         (resource == null || resource.data.userId == request.auth.uid);

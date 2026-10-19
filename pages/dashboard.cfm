@@ -14,6 +14,7 @@
     <cfset allGroups     = grpCFC.getGroups("All")>
     <cfset recentExp     = expCFC.getExpenses({})>
     <cfset pendingStls   = stlCFC.getSettlements("", "Pending")>
+    <cfset cashInHand    = accCFC.getCashInHand()>
 
     <cfset acctCurrency = {}>
     <cfloop array="#allAccounts#" index="a"><cfset acctCurrency[a._id] = a.currency></cfloop>
@@ -111,6 +112,17 @@
         </div>
         <div class="stat-label">Total Balance</div>
     </div>
+    <cfif structCount(cashInHand)>
+    <div class="stat-card stat-teal">
+        <div class="stat-icon">&##128181;</div>
+        <div class="stat-value">
+            <cfloop collection="#cashInHand#" item="cur">
+                <div>#application.currencySymbol(cur)##numberFormat(cashInHand[cur], "9,999.00")#</div>
+            </cfloop>
+        </div>
+        <div class="stat-label">Cash in Hand</div>
+    </div>
+    </cfif>
     <div class="stat-card stat-red">
         <div class="stat-icon">&##128176;</div>
         <div class="stat-value">
