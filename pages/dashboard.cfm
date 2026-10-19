@@ -110,7 +110,7 @@
                 </cfloop>
             </cfif>
         </div>
-        <div class="stat-label">Total Balance</div>
+        <div class="stat-label">Cash Balance</div>
     </div>
     <cfif structCount(cashInHand)>
     <div class="stat-card stat-teal">

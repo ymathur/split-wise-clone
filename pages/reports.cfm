@@ -139,10 +139,13 @@
                     </cfif>
                 </div>
                 <div class="stat-label">Total Spent</div>
+                <cfif len(f.accountId) && reportData.otherExpenses neq 0>
+                    <div class="text-muted">Cash #reportCurSym##numberFormat(reportData.cashExpenses, "9,999.00")# &bull; Card/UPI/bank/other #reportCurSym##numberFormat(reportData.otherExpenses, "9,999.00")#</div>
+                </cfif>
             </div>
             <div class="stat-card stat-<cfif reportData.balance lt 0>red<cfelse>green</cfif>">
                 <div class="stat-value">#reportCurSym##numberFormat(reportData.balance, "9,999.00")#</div>
-                <div class="stat-label">Balance</div>
+                <div class="stat-label">Cash Balance</div>
             </div>
         </div>
 

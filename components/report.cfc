@@ -28,11 +28,13 @@ component {
         for (var acct in accCFC.getAccounts("All")) acctCurrency[acct._id] = acct.currency;
 
         var total        = 0;
+        var cashTotal    = 0;
         var categoryTotals = {};
         var categoryTotalsByCur = {};
         var totalByCur      = {};
         for (var e in expenses) {
             total += val(e.amount);
+            if (accCFC.isCashPayment(e.paymentMode ?: "")) cashTotal += val(e.amount);
             var cat = e.category ?: "Miscellaneous";
             if (!structKeyExists(categoryTotals, cat)) categoryTotals[cat] = 0;
             categoryTotals[cat] += val(e.amount);
@@ -48,6 +50,7 @@ component {
 
         var openingAmount = 0;
         var cashIn         = 0;
+        var isClosed       = false;
         var currency       = "";
         if (structKeyExists(filters, "accountId") && len(filters.accountId)) {
             try {
@@ -55,6 +58,7 @@ component {
                 openingAmount = val(acc.openingAmount);
                 cashIn        = accCFC.getAccountBalance(filters.accountId).cashIn;
                 currency      = acc.currency;
+                isClosed      = acc.status == "Closed";
             } catch (any e) {}
         }
 
@@ -64,7 +68,9 @@ component {
             totalByCur          : totalByCur,
             openingAmount       : openingAmount,
             cashIn              : cashIn,
-            balance             : openingAmount + cashIn - total,
+            cashExpenses        : cashTotal,
+            otherExpenses       : total - cashTotal,
+            balance             : isClosed ? 0 : openingAmount + cashIn - cashTotal,
             categoryTotals      : categoryTotals,
             categoryTotalsByCur : categoryTotalsByCur,
             currency            : currency,

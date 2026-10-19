@@ -85,7 +85,8 @@
             <div class="balance-row">
                 <span>Opening: <strong>#curSym##numberFormat(bal.openingAmount, "9,999.00")#</strong></span>
                 <cfif bal.cashIn neq 0><span>Cash in/out: <strong>#curSym##numberFormat(bal.cashIn, "9,999.00")#</strong></span></cfif>
-                <span>Spent: <strong class="text-danger">#curSym##numberFormat(bal.totalExpenses, "9,999.00")#</strong></span>
+                <span>Cash spent: <strong class="text-danger">#curSym##numberFormat(bal.cashExpenses, "9,999.00")#</strong></span>
+                <cfif bal.otherExpenses neq 0><span>Paid by card/UPI/bank/other: <strong>#curSym##numberFormat(bal.otherExpenses, "9,999.00")#</strong></span></cfif>
                 <span>Balance: <strong class="<cfif bal.balance lt 0>text-danger<cfelse>text-success</cfif>">#curSym##numberFormat(bal.balance, "9,999.00")#</strong></span>
             </div>
         </div>

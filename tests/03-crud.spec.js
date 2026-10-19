@@ -35,6 +35,31 @@ test('add, edit and delete a personal expense', async ({ page }) => {
     await expect(page.locator('table tbody tr')).toHaveCount(a.expenseCount);
 });
 
+test('only cash expenses reduce the account balance', async ({ page }) => {
+    const { balance } = require('./fixtures');
+    const { money, accountCard } = require('./helpers');
+    const a = ACCOUNTS.lasVegas;
+    await page.goto(`/pages/expense-form.cfm?accountId=${a.id}`);
+    await page.locator('#accountId').selectOption({ label: a.name });
+    await page.locator('#date').fill('2026-10-10');
+    await page.locator('#description').fill('Playwright card dinner');
+    await page.locator('#amount').fill('75');
+    await page.locator('#paymentMode').selectOption('Card');
+    await page.getByRole('button', { name: 'Save Expense' }).click();
+    await page.waitForURL(/expenses\.cfm\?saved=1/);
+
+    await page.goto('/pages/accounts.cfm');
+    const card = accountCard(page, a.name);
+    await expect(card).toContainText('Balance: ' + money('$', balance(a)));
+    await expect(card).toContainText('Paid by card/UPI/bank/other: ' + money('$', 75));
+
+    // Remove it again so later specs see the seeded expense count
+    await page.goto(`/pages/expenses.cfm?accountId=${a.id}`);
+    page.once('dialog', (d) => d.accept());
+    await page.locator('table tbody tr').filter({ hasText: 'Playwright card dinner' }).getByRole('button', { name: 'Del' }).click();
+    await page.waitForURL(/expenses\.cfm\?deleted=1/);
+});
+
 test('add a group expense split equally', async ({ page }) => {
     await page.goto('/pages/expense-form.cfm');
     await page.locator('#typeGroup').check();

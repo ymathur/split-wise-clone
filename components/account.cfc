@@ -89,8 +89,15 @@ component {
         if (!result.success) throw(type="FirestoreError", message="Failed to delete account");
     }
 
-    // Returns {openingAmount, cashIn, totalExpenses, balance}
-    // cashIn is the net of cash-in-hand transfers: + funded from cash, - moved to cash on close
+    // An account's balance is the cash left, so only cash payments reduce it.
+    // Older expenses saved without a payment mode count as cash.
+    function isCashPayment(string paymentMode = "") {
+        return !len(trim(arguments.paymentMode)) || trim(arguments.paymentMode) == "Cash";
+    }
+
+    // Returns {openingAmount, cashIn, totalExpenses, cashExpenses, otherExpenses, balance}
+    // cashIn is the net of cash-in-hand transfers: + funded from cash, - moved to cash on close.
+    // balance = opening + cashIn - cashExpenses; card/UPI/bank/other spending doesn't reduce it.
     function getAccountBalance(required string accountId) {
         var account = getAccount(arguments.accountId);
         var cashIn  = 0;
@@ -107,17 +114,25 @@ component {
             filters    = filters,
             idToken    = variables.idToken
         );
-        var totalExpenses = 0;
+        var cashExpenses  = 0;
+        var otherExpenses = 0;
         if (expResult.success) {
             for (var e in expResult.data) {
-                if (e.status != "Deleted") totalExpenses += val(e.amount);
+                if (e.status == "Deleted") continue;
+                if (isCashPayment(e.paymentMode ?: "")) cashExpenses += val(e.amount);
+                else otherExpenses += val(e.amount);
             }
         }
+        // A closed account's leftover was already moved to cash in hand when it was closed
+        // (under whatever rule applied then), so it always shows zero
+        var balance = account.status == "Closed" ? 0 : val(account.openingAmount) + cashIn - cashExpenses;
         return {
             openingAmount  : val(account.openingAmount),
             cashIn         : cashIn,
-            totalExpenses  : totalExpenses,
-            balance        : val(account.openingAmount) + cashIn - totalExpenses
+            totalExpenses  : cashExpenses + otherExpenses,
+            cashExpenses   : cashExpenses,
+            otherExpenses  : otherExpenses,
+            balance        : balance
         };
     }
 
