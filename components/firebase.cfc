@@ -4,11 +4,24 @@ component {
     variables.apiKey    = "";
     variables.firestoreBase = "";
     variables.authBase      = "https://identitytoolkit.googleapis.com/v1";
+    variables.tokenUrl      = "https://securetoken.googleapis.com/v1/token";
 
     function init(required string projectId, required string apiKey) {
         variables.projectId     = arguments.projectId;
         variables.apiKey        = arguments.apiKey;
-        variables.firestoreBase = "https://firestore.googleapis.com/v1/projects/" & arguments.projectId & "/databases/(default)/documents";
+        var firestoreHost       = "https://firestore.googleapis.com";
+
+        // Local emulators (test server only): same REST paths, served over plain http
+        var emu = application.firebase ?: {};
+        if (len(emu.firestoreEmulator ?: "")) {
+            firestoreHost = "http://" & emu.firestoreEmulator;
+        }
+        if (len(emu.authEmulator ?: "")) {
+            variables.authBase = "http://" & emu.authEmulator & "/identitytoolkit.googleapis.com/v1";
+            variables.tokenUrl = "http://" & emu.authEmulator & "/securetoken.googleapis.com/v1/token";
+        }
+
+        variables.firestoreBase = firestoreHost & "/v1/projects/" & arguments.projectId & "/databases/(default)/documents";
         return this;
     }
 
@@ -33,6 +46,41 @@ component {
         return result;
     }
 
+    // Exchanges a Firebase refresh token for a new ID token.
+    // Returns {success, idToken, refreshToken} - Firebase may rotate the refresh token.
+    function refreshIdToken(required string refreshToken) {
+        var result  = {"success": false};
+        var reqUrl  = variables.tokenUrl & "?key=" & variables.apiKey;
+        var reqBody = "grant_type=refresh_token&refresh_token=" & urlEncodedFormat(arguments.refreshToken);
+
+        var res = _javaRequest(reqUrl, "POST", reqBody, "", "application/x-www-form-urlencoded");
+
+        if (res.statusCode contains "200") {
+            var parsed = deserializeJSON(res.fileContent);
+            result["success"]      = true;
+            result["idToken"]      = parsed.id_token;
+            result["refreshToken"] = parsed.refresh_token;
+        } else {
+            result["error"] = _parseError(res.fileContent);
+        }
+        return result;
+    }
+
+    // Seconds until the ID token's exp claim; 0 if it is expired or unreadable.
+    // Only reads the claim, no signature check - Firestore still verifies the token itself.
+    function tokenSecondsLeft(required string idToken) {
+        try {
+            var payload = listGetAt(arguments.idToken, 2, ".");
+            payload = replace(replace(payload, "-", "+", "all"), "_", "/", "all");
+            payload &= repeatString("=", (4 - len(payload) mod 4) mod 4);
+            var claims = deserializeJSON(charsetEncode(binaryDecode(payload, "base64"), "UTF-8"));
+            var nowSec = int(createObject("java", "java.lang.System").currentTimeMillis() / 1000);
+            return max(0, val(claims.exp) - nowSec);
+        } catch (any e) {
+            return 0;
+        }
+    }
+
     // ── Firestore CRUD ───────────────────────────────────────────────────
 
     function getDocument(required string collection, required string docId, required string idToken) {
@@ -48,6 +96,9 @@ component {
             result["data"]["_id"]   = listLast(doc.name, "/");
         } else {
             result["error"] = _parseError(res.fileContent);
+            if (!(res.statusCode contains "404")) {
+                writeLog(file="firestore", type="error", text="getDocument #arguments.collection#/#arguments.docId# failed (#res.statusCode#): #result.error#");
+            }
         }
         return result;
     }
@@ -125,20 +176,23 @@ component {
 
     // ── Querying ─────────────────────────────────────────────────────────
 
+    // Fetches every matching document, page by page. Firestore caps a single runQuery
+    // response, so without paging callers silently got only the first page of results.
+    // limit = 0 means no cap; a positive limit stops after that many documents.
     function queryCollection(
         required string collection,
         array   filters = [],
         array   orderBy = [],
-        numeric limit   = 200,
+        numeric limit   = 0,
         required string idToken
     ) {
-        var result = {"success": false, "data": []};
-        var reqUrl = variables.firestoreBase & ":runQuery";
+        var result   = {"success": false, "data": []};
+        var reqUrl   = variables.firestoreBase & ":runQuery";
+        var pageSize = 300;
 
         var query = {
             "structuredQuery": {
-                "from"  : [{"collectionId": arguments.collection}],
-                "limit" : arguments.limit
+                "from"  : [{"collectionId": arguments.collection}]
             }
         };
 
@@ -154,22 +208,33 @@ component {
             query["structuredQuery"]["orderBy"] = arguments.orderBy;
         }
 
-        var payload = serializeJSON(query);
-        var res     = _post(reqUrl, payload, arguments.idToken);
+        var offset = 0;
+        while (true) {
+            var want = arguments.limit > 0 ? min(pageSize, arguments.limit - offset) : pageSize;
+            query["structuredQuery"]["limit"]  = want;
+            query["structuredQuery"]["offset"] = offset;
 
-        if (res.statusCode contains "200") {
-            var rows = deserializeJSON(res.fileContent);
-            result["success"] = true;
-            for (var row in rows) {
+            var res = _post(reqUrl, serializeJSON(query), arguments.idToken);
+            if (!(res.statusCode contains "200")) {
+                result["success"] = false;
+                result["error"]   = _parseError(res.fileContent);
+                writeLog(file="firestore", type="error", text="runQuery #arguments.collection# failed (#res.statusCode#): #result.error#");
+                return result;
+            }
+
+            var got = 0;
+            for (var row in deserializeJSON(res.fileContent)) {
                 if (structKeyExists(row, "document")) {
                     var d = firestoreToStruct(row.document);
                     d["_id"] = listLast(row.document.name, "/");
                     arrayAppend(result["data"], d);
+                    got++;
                 }
             }
-        } else {
-            result["error"] = _parseError(res.fileContent);
+            offset += got;
+            if (got < want || (arguments.limit > 0 && offset >= arguments.limit)) break;
         }
+        result["success"] = true;
         return result;
     }
 
@@ -246,8 +311,9 @@ component {
     private function _javaRequest(
         required string reqUrl,
         required string method,
-        string body  = "",
-        string token = ""
+        string body        = "",
+        string token       = "",
+        string contentType = "application/json"
     ) {
         try {
             var jUrl = createObject("java", "java.net.URL").init(arguments.reqUrl);
@@ -255,7 +321,7 @@ component {
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(30000);
             conn.setDoInput(true);
-            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Content-Type", arguments.contentType);
             if (len(trim(arguments.token))) {
                 conn.setRequestProperty("Authorization", "Bearer " & arguments.token);
             }

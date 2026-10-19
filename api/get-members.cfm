@@ -3,6 +3,11 @@
     <cfoutput>{"success":false,"data":[]}</cfoutput>
     <cfabort>
 </cfif>
+<cfinclude template="/includes/tokenRefresh.cfm">
+<cfif !tokenValid>
+    <cfoutput>{"success":false,"data":[]}</cfoutput>
+    <cfabort>
+</cfif>
 <cftry>
     <cfset groupId = url.groupId ?: "">
     <cfif !len(groupId)>

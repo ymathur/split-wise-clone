@@ -66,6 +66,8 @@ function jsonResp(boolean success, string message, string redirect = "") {
     <cfset session.userName   = userName>
     <cfset session.userEmail  = userEmail>
     <cfset session.idToken    = idToken>
+    <!--- Lets the server renew the 1-hour ID token itself (see includes/tokenRefresh.cfm) --->
+    <cfset session.refreshToken = body.refreshToken ?: "">
 
     <cfoutput>#jsonResp(true, "Authentication successful", "/pages/dashboard.cfm")#</cfoutput>
 

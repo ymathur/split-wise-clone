@@ -60,7 +60,7 @@ loginForm.addEventListener('submit', async (e) => {
         const res  = await fetch('/auth-verify.cfm', {
             method  : 'POST',
             headers : {'Content-Type': 'application/json'},
-            body    : JSON.stringify({idToken, action: 'login'})
+            body    : JSON.stringify({idToken, refreshToken: credential.user.refreshToken, action: 'login'})
         });
         const data = await res.json();
 

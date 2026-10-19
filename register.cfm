@@ -67,7 +67,7 @@ regForm.addEventListener('submit', async (e) => {
         const res  = await fetch('/auth-verify.cfm', {
             method  : 'POST',
             headers : {'Content-Type': 'application/json'},
-            body    : JSON.stringify({idToken, action: 'register', name})
+            body    : JSON.stringify({idToken, refreshToken: cred.user.refreshToken, action: 'register', name})
         });
         const data = await res.json();
 

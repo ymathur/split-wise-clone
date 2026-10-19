@@ -10,17 +10,33 @@ component {
     }
 
     function onSessionStart() {
-        session.isLoggedIn = false;
-        session.userId    = "";
-        session.userName  = "";
-        session.userEmail = "";
-        session.idToken   = "";
-        session.csrfToken = lCase(hash(createUUID() & createUUID() & getTickCount(), "SHA-256"));
+        initSession();
     }
 
     function onRequestStart(targetPage) {
         if (!application.keyExists("firebase") || !application.keyExists("currencies") || !application.keyExists("receiptsDir")) {
             loadConfig();
+        }
+        // Lucee does not call onSessionStart for the fresh session that follows sessionInvalidate()
+        // (logout, expired login), so make sure the defaults exist on every request.
+        if (!session.keyExists("csrfToken")) {
+            initSession();
+        }
+    }
+
+    // Fills in only missing keys, so a logged-in session that lacks a CSRF token keeps its login
+    private function initSession() {
+        var defaults = {
+            isLoggedIn   : false,
+            userId       : "",
+            userName     : "",
+            userEmail    : "",
+            idToken      : "",
+            refreshToken : "",
+            csrfToken    : lCase(hash(createUUID() & createUUID() & getTickCount(), "SHA-256"))
+        };
+        for (var key in defaults) {
+            if (!session.keyExists(key)) session[key] = defaults[key];
         }
     }
 
@@ -32,7 +48,9 @@ component {
     }
 
     private function loadConfig() {
-        var env = loadEnv(expandPath("/.env"));
+        // The test server (server-test.json) points this at .env.test so it talks to the local emulators
+        var envFile = createObject("java", "java.lang.System").getProperty("SPLITWISE_ENV_FILE", ".env");
+        var env = loadEnv(expandPath("/" & envFile));
         var required = ["FIREBASE_PROJECT_ID", "FIREBASE_API_KEY", "FIREBASE_AUTH_DOMAIN"];
         for (var key in required) {
             if (!len(env[key] ?: "")) {
@@ -44,7 +62,10 @@ component {
             projectId  : env.FIREBASE_PROJECT_ID,
             apiKey     : env.FIREBASE_API_KEY,
             authDomain : env.FIREBASE_AUTH_DOMAIN,
-            databaseId : len(env.FIREBASE_DATABASE_ID ?: "") ? env.FIREBASE_DATABASE_ID : "(default)"
+            databaseId : len(env.FIREBASE_DATABASE_ID ?: "") ? env.FIREBASE_DATABASE_ID : "(default)",
+            // host:port of the local Firebase emulators; empty means the real Google endpoints
+            firestoreEmulator : env.FIRESTORE_EMULATOR_HOST ?: "",
+            authEmulator      : env.FIREBASE_AUTH_EMULATOR_HOST ?: ""
         };
         application.appName    = "Split Expense App";
         application.appVersion = "1.0";
@@ -76,7 +97,7 @@ component {
 
         // Receipt photos live outside the webroot so they can never be served directly -
         // the only access path is the ownership-gated pages/receipt-view.cfm.
-        application.receiptsDir = "/Users/Yogesh/Documents/ClaudeCoding/SplitWiseClone_receipts/";
+        application.receiptsDir = len(env.RECEIPTS_DIR ?: "") ? env.RECEIPTS_DIR : "/Users/Yogesh/Documents/ClaudeCoding/SplitWiseClone_receipts/";
         if (!directoryExists(application.receiptsDir)) {
             directoryCreate(application.receiptsDir);
         }

@@ -18,6 +18,9 @@
             projectId  : "#application.firebase.projectId#"
         };
         firebase.initializeApp(firebaseConfig);
+        <cfif len(application.firebase.authEmulator ?: "")>
+        firebase.auth().useEmulator("http://#application.firebase.authEmulator#");
+        </cfif>
     </script>
     </cfoutput>
     </cfif>
