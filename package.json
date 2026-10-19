@@ -1,0 +1,14 @@
+{
+  "name": "splitwiseclone-tests",
+  "private": true,
+  "description": "End-to-end tests: Playwright against a Lucee test server backed by the Firebase emulators",
+  "scripts": {
+    "test": "firebase emulators:exec --only auth,firestore --project demo-splitwise \"npx playwright test\"",
+    "test:headed": "firebase emulators:exec --only auth,firestore --project demo-splitwise \"npx playwright test --headed\"",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-splitwise",
+    "test:only": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

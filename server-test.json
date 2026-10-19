@@ -1,0 +1,16 @@
+{
+    "name":"SplitWiseClone-test",
+    "app":{
+        "cfengine":"lucee@5"
+    },
+    "web":{
+        "http":{
+            "port":"8889"
+        }
+    },
+    "jvm":{
+        "args":"-DSPLITWISE_ENV_FILE=.env.test"
+    },
+    "openBrowser":false,
+    "webroot":"."
+}

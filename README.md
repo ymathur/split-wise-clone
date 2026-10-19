@@ -153,3 +153,27 @@ Default currency: **INR (₹)**. All amounts stored as numbers in Firestore.
 - PWA / offline support
 - WhatsApp sharing of expense summaries
 - Recurring expenses
+
+## Testing
+
+End-to-end tests use Playwright against a separate Lucee server (port 8889) backed by the
+local Firebase Auth + Firestore emulators. They never touch the real Firebase project or the
+port-8888 dev server, and every run wipes and re-seeds the emulators (`tests/global-setup.js`).
+
+One-time setup:
+
+1. Java 21+ (needed by the Firestore emulator), e.g. `brew install --cask temurin@21`
+2. `npm install` (installs `@playwright/test`), then `npx playwright install chromium`
+3. The first `npm test` downloads the Firestore emulator jar via the Firebase CLI
+
+Run:
+
+```
+npm test            # starts emulators, test server, runs all specs
+npm run test:headed # same, with a visible browser
+npx playwright show-report
+```
+
+Set `BOX_BIN` if CommandBox isn't at `/Users/Yogesh/Downloads/commandbox/box`.
+The test server reads `.env.test` (emulator hosts, `demo-splitwise` project) via the
+`SPLITWISE_ENV_FILE` JVM property in `server-test.json`.
