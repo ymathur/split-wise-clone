@@ -14,11 +14,11 @@
     <cfset expenses   = expCFC.getExpenses({groupId: groupId})>
     <cfset settlements= stlCFC.getSettlements(groupId)>
 
-    <!--- Collect splits --->
+    <!--- Collect splits of the listed (non-deleted) expenses --->
+    <cfset splitsByExpense = expCFC.getGroupSplits(groupId)>
     <cfset allSplits = []>
     <cfloop array="#expenses#" index="e">
-        <cfset splits = expCFC.getExpenseSplits(e._id)>
-        <cfloop array="#splits#" index="s"><cfset arrayAppend(allSplits, s)></cfloop>
+        <cfloop array="#splitsByExpense[e._id] ?: []#" index="s"><cfset arrayAppend(allSplits, s)></cfloop>
     </cfloop>
 
     <cfset balances    = stlCFC.calculateBalances(groupId, members, expenses, allSplits, settlements)>

@@ -35,9 +35,10 @@ function safeFileName(required string name) {
         <cfset expenses = expCFC.getExpenses({groupId: groupId, expenseType: "Group"})>
         <cfset arraySort(expenses, function(a, b) { return compare(a.date, b.date); })>
 
+        <cfset splitsByExpense = expCFC.getGroupSplits(groupId)>
         <cfset lines = ["date,amount,description,category,paymentMode,paidByName,splitType,splitMembers,customShares,notes"]>
         <cfloop array="#expenses#" index="e">
-            <cfset splits      = expCFC.getExpenseSplits(e._id)>
+            <cfset splits      = splitsByExpense[e._id] ?: []>
             <cfset paidByName  = memberNames[e.paidByMemberId] ?: "">
             <cfset splitMembersOut = "">
             <cfset customSharesOut = "">

@@ -51,6 +51,19 @@ test('add a group expense split equally', async ({ page }) => {
     await expect(page.getByText('Playwright dinner')).toBeVisible();
 });
 
+// Regression: editing a group expense soft-deletes its old splits; those used to be counted
+// again, so every edit inflated member shares and balances.
+test('editing a group expense leaves member balances unchanged', async ({ page }) => {
+    const balancesCard = page.locator('.card').filter({ has: page.getByRole('heading', { name: 'Member Balances' }) });
+    await page.goto(`/pages/group-detail.cfm?id=${GROUP.id}`);
+    const before = await balancesCard.innerText();
+
+    await page.goto('/pages/expense-form.cfm?id=grp-exp-0');
+    await page.getByRole('button', { name: 'Update Expense' }).click();
+    await page.waitForURL(/group-detail\.cfm\?.*saved=1/);
+    await expect(balancesCard).toHaveText(before);
+});
+
 test('add a member to the group', async ({ page }) => {
     await page.goto(`/pages/group-members.cfm?groupId=${GROUP.id}`);
     await page.locator('#memberName').fill('New Friend');

@@ -83,10 +83,10 @@ component {
         var stls      = stlCFC.getSettlements(arguments.groupId);
 
         // Collect all splits for group expenses
+        var splitsByExpense = expCFC.getGroupSplits(arguments.groupId);
         var allSplits = [];
         for (var e in expenses) {
-            var splits = expCFC.getExpenseSplits(e._id);
-            for (var s in splits) { arrayAppend(allSplits, s); }
+            for (var s in (splitsByExpense[e._id] ?: [])) { arrayAppend(allSplits, s); }
         }
 
         // Member lookup

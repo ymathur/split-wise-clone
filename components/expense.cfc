@@ -123,7 +123,27 @@ component {
             idToken    = variables.idToken
         );
         if (!result.success) return [];
-        return result.data;
+        // Editing an expense soft-deletes its old splits, so they must be skipped
+        return arrayFilter(result.data, function(s) { return (s.status ?: "") != "Deleted"; });
+    }
+
+    // All live splits for a group in one query, as {expenseId: [splits]}.
+    // Use this instead of calling getExpenseSplits() per expense (one round trip each).
+    function getGroupSplits(required string groupId) {
+        new components.group(variables.fb, variables.userId, variables.idToken).getGroup(arguments.groupId); // verify ownership
+        var result = variables.fb.queryCollection(
+            collection = "expenseSplits",
+            filters    = [variables.fb.fieldFilter("groupId", "EQUAL", arguments.groupId)],
+            idToken    = variables.idToken
+        );
+        if (!result.success) throw(type="FirestoreError", message=result.error ?: "Failed to load splits");
+        var byExpense = {};
+        for (var s in result.data) {
+            if ((s.status ?: "") == "Deleted") continue;
+            if (!structKeyExists(byExpense, s.expenseId)) byExpense[s.expenseId] = [];
+            arrayAppend(byExpense[s.expenseId], s);
+        }
+        return byExpense;
     }
 
     function updateExpense(required string expenseId, required struct data, array splits = []) {
